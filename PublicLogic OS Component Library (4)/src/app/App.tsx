@@ -13,6 +13,7 @@ import Settings from "./pages/Settings";
 import Lists from "./pages/Lists";
 import Today from "./pages/Today";
 import Tools from "./pages/Tools";
+import { HomePage } from "../pages/HomePage";
 import PhillipstonPRR from "./environments/phillipston/prr/PhillipstonPRR";
 import PhillipstonLegacy from "./pages/PhillipstonLegacy";
 import TownShell from "./environments/TownShell";
@@ -29,7 +30,7 @@ function HomeRedirect() {
 
   // Default: internal users land in PublicLogic OS; others land in Phillipston demo space.
   return allowed.includes(email) ? (
-    <Navigate to="/dashboard" replace />
+    <HomePage />
   ) : (
     <Navigate to="/phillipston" replace />
   );
@@ -98,6 +99,8 @@ export default function App() {
         <Route path="/pipeline" element={<Pipeline />} />
         <Route path="/projects" element={<Projects />} />
         <Route path="/playbooks" element={<Playbooks />} />
+        <Route path="/writing" element={<Navigate to="/playbooks" replace />} />
+        <Route path="/discovery" element={<Navigate to="/dashboard" replace />} />
         <Route path="/tools" element={<Tools />} />
         <Route path="/environments" element={<Environments />} />
         <Route path="/settings" element={<Settings />} />
