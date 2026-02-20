@@ -2,6 +2,7 @@
   "buildCommand": "node scripts/vercel-build.mjs",
   "outputDirectory": "dist",
   "redirects": [
+    { "source": "/", "destination": "https://publiclogic.figma.site", "permanent": false },
     { "source": "/HMLP", "destination": "/hmlp/", "permanent": true },
     { "source": "/HMLP/:path*", "destination": "/hmlp/:path*", "permanent": true }
   ],
