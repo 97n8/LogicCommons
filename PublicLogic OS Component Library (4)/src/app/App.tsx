@@ -24,16 +24,8 @@ function normalizeEmail(value: string) {
 }
 
 function HomeRedirect() {
-  const { accounts } = useMsal();
-  const email = normalizeEmail(accounts[0]?.username ?? "");
-  const allowed = getAllowedEmails().map(normalizeEmail);
-
-  // Default: internal users land in PublicLogic OS; others land in Phillipston demo space.
-  return allowed.includes(email) ? (
-    <HomePage />
-  ) : (
-    <Navigate to="/phillipston" replace />
-  );
+  // Always land on the LogicCommons OS entry portal; environments remain available via explicit routes.
+  return <HomePage />;
 }
 
 function PhillipstonLayout() {

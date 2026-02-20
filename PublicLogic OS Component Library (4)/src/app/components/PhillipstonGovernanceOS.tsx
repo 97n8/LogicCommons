@@ -11,7 +11,7 @@ import { Table, THead, TBody, TR, TH, TD, Modal } from "./ui/overlay";
 import { motion as Motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
 import { projectId, publicAnonKey } from "../../../utils/supabase/info";
-import { getPillVariant } from "../lib/constants.ts";
+import { getPillVariant } from "../lib/constants";
 import { calculatePRRDeadline } from "../lib/governance/policies";
 
 // Patch: Source of truth for runtime

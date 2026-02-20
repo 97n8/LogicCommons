@@ -1,12 +1,26 @@
 {
+  "framework": "vite",
+  "installCommand": "npm ci && npm --prefix \"PublicLogic OS Component Library (4)\" ci",
   "buildCommand": "node scripts/vercel-build.mjs",
   "outputDirectory": "dist",
-  "redirects": [
-    { "source": "/HMLP", "destination": "/hmlp/", "permanent": true },
-    { "source": "/HMLP/:path*", "destination": "/hmlp/:path*", "permanent": true }
-  ],
   "rewrites": [
-    { "source": "/hmlp", "destination": "/hmlp/index.html" },
-    { "source": "/hmlp/:path*", "destination": "/hmlp/index.html" }
+    { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "X-XSS-Protection", "value": "1; mode=block" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
+      ]
+    }
   ]
 }

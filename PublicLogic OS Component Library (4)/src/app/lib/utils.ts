@@ -6,6 +6,7 @@ export function el(tag: string, attrs: any = {}, children: any = []) {
   const node = document.createElement(tag);
   for (const [k, v] of Object.entries(attrs || {})) {
     if (k === "class") node.className = v as string;
+    if (k === "class") node.className = String(v);
     else if (k === "dataset") {
       for (const [dk, dv] of Object.entries(v as any || {})) node.dataset[dk] = String(dv);
     } else if (k.startsWith("on") && typeof v === "function") {

@@ -1,5 +1,5 @@
-import { graphGet } from "./graph-base.ts";
-import { toGraphDateTime } from "./time.ts";
+import { graphGet } from "./graph-base";
+import { toGraphDateTime } from "./time";
 
 /**
  * Get current user profile

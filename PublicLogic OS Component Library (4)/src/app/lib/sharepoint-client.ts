@@ -1,4 +1,4 @@
-import { graphGet, graphPost, graphPatch, graphDelete } from "./graph-base.ts";
+import { graphGet, graphPost, graphPatch, graphDelete } from "./graph-base";
 import { getSharePointRuntimeConfig } from "../../auth/publiclogicConfig";
 
 function encodeODataStringLiteral(s: string) {
