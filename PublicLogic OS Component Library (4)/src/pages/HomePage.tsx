@@ -1,607 +1,622 @@
-import React, { useState } from "react";
+import React from "react";
 import {
+  Home,
+  BookOpen,
+  Globe,
+  Briefcase,
+  Settings,
+  LogOut,
+  Search,
+  Send,
   CheckCircle2,
-  ShieldAlert,
-  Clock,
-  Scale,
-  AlertCircle,
-  Copy,
-  ExternalLink,
+  AlertTriangle,
 } from "lucide-react";
-import { motion as Motion, AnimatePresence } from "motion/react";
 
-// ── Config ────────────────────────────────────────────────────────────────
-const PRR_ENDPOINT = "/public/prr";
-const PRR_STATUS_BASE = "/prr/status";
-const WORKSPACE_ID = "default"; // set dynamically if multi-tenant
+// ── Config & Colors (dark theme to match your existing app) ────────────────
+const SIDEBAR_WIDTH = "228px";
 
-const LEGAL_NOTICE =
-  "This request is submitted under M.G.L. c. 66 §10 and 950 CMR 32.00. " +
-  "The Town of Phillipston must respond within 10 business days unless a valid extension applies.";
-
-const CATEGORIES = [
-  "Assessors' Records",
-  "Building Permits",
-  "Town Clerk Records",
-  "Public Safety Reports",
-  "Financial / Budget Records",
-  "Meeting Minutes / Agendas",
-  "Other",
-] as const;
-
-// ── Types ─────────────────────────────────────────────────────────────────
-interface PRRResponse {
-  success: boolean;
-  data?: { public_token: string };
-  error?: string;
-}
-
-// ── Helpers ───────────────────────────────────────────────────────────────
-function buildStatusUrl(token: string) {
-  return `${PRR_STATUS_BASE}?token=${encodeURIComponent(token)}`;
-}
+const COLORS = {
+  bg: "#09090b",
+  panel: "#18181b",
+  border: "#27272a",
+  borderStrong: "#3f3f46",
+  text: "#f4f4f5",
+  sub: "#a1a1aa",
+  muted: "#71717a",
+  green: "#10b981",
+  greenMid: "#34d399",
+  greenLight: "#052e16",
+  greenPale: "#0a2a1f",
+  amber: "#fbbf24",
+  amberBg: "#3a2f1f",
+} as const;
 
 // ── Component ─────────────────────────────────────────────────────────────
-export function HomePage() {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [token, setToken] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
-
-  // ── Submission ──────────────────────────────────────────────────────────
-  const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setError(null);
-    setIsSubmitting(true);
-
-    const form = e.currentTarget;
-    const data = new FormData(form);
-
-    const category = data.get("category") as string;
-    const description = (data.get("description") as string).trim();
-
-    const payload = {
-      workspace_id: WORKSPACE_ID,
-      name: (data.get("name") as string).trim(),
-      email: (data.get("email") as string).trim(),
-      // Prefix the summary with category so operators get context at a glance
-      summary: `[${category}] ${description.slice(0, 120)}${description.length > 120 ? "…" : ""}`,
-      details: description || null,
-    };
-
-    try {
-      const res = await fetch(PRR_ENDPOINT, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const json: PRRResponse = await res.json();
-
-      if (!res.ok || !json.success || !json.data?.public_token) {
-        throw new Error(
-          json.error || `Server returned ${res.status}. Please try again.`
-        );
-      }
-
-      setToken(json.data.public_token);
-      form.reset();
-    } catch (err: unknown) {
-      const msg =
-        err instanceof Error
-          ? err.message
-          : "An unexpected error occurred. Please try again.";
-      setError(msg);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // ── Copy token ──────────────────────────────────────────────────────────
-  const copyToken = () => {
-    if (!token) return;
-    navigator.clipboard
-      .writeText(token)
-      .then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      })
-      .catch(() => {});
-  };
-
-  // ── Render ──────────────────────────────────────────────────────────────
-  return (
-    <div className="min-h-screen" style={{ background: "#09090b", color: "#f4f4f5" }}>
-
-      {/* ── Page header ──────────────────────────────────────────────── */}
-      <div
-        style={{
-          borderBottom: "1px solid #27272a",
-          background: "#18181b",
-          padding: "20px 28px",
-          display: "flex",
-          alignItems: "center",
-          gap: "14px",
-        }}
-      >
-        <Scale size={22} style={{ color: "#34d399" }} />
-        <div>
-          <span style={{ fontWeight: 700, fontSize: 16, color: "#f4f4f5" }}>
-            Resident Records Portal
-          </span>
-          <span
-            style={{
-              marginLeft: 12,
-              fontSize: 12,
-              color: "#a1a1aa",
-              letterSpacing: "0.06em",
-              textTransform: "uppercase",
-            }}
-          >
-            Town of Phillipston
-          </span>
-        </div>
-      </div>
-
-      {/* ── Body ─────────────────────────────────────────────────────── */}
-      <div style={{ maxWidth: 900, margin: "0 auto", padding: "40px 24px 80px" }}>
-
-        {/* Page title */}
-        <div style={{ marginBottom: 36 }}>
-          <h2
-            style={{
-              fontSize: 26,
-              fontWeight: 800,
-              letterSpacing: "-0.03em",
-              color: "#f4f4f5",
-              marginBottom: 6,
-            }}
-          >
-            Public Records Request
-          </h2>
-          <p style={{ fontSize: 14, color: "#a1a1aa" }}>
-            M.G.L. c. 66 §10 — submit your request below and receive a tracking
-            token to monitor status.
-          </p>
-        </div>
-
-        {/* Two-column layout */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 28 }}>
-
-          {/* ── Main form / success card ────────────────────────────── */}
-          <div>
-            <AnimatePresence mode="wait">
-              {token ? (
-                // ── Success state ───────────────────────────────────
-                <Motion.div
-                  key="success"
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  style={{
-                    background: "#18181b",
-                    border: "1px solid #27272a",
-                    borderRadius: 16,
-                    padding: "40px 32px",
-                    textAlign: "center",
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 64,
-                      height: 64,
-                      borderRadius: "50%",
-                      background: "rgba(16,185,129,0.12)",
-                      border: "1px solid rgba(16,185,129,0.25)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      margin: "0 auto 20px",
-                    }}
-                  >
-                    <CheckCircle2 size={28} style={{ color: "#10b981" }} />
-                  </div>
-
-                  <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>
-                    Request Filed
-                  </h3>
-                  <p style={{ fontSize: 14, color: "#a1a1aa", marginBottom: 28, maxWidth: 380, margin: "0 auto 28px" }}>
-                    Your request has been submitted to the Municipal Archive.
-                    Save your tracking token to check status.
-                  </p>
-
-                  {/* Token display */}
-                  <div
-                    style={{
-                      background: "#09090b",
-                      border: "1px solid #27272a",
-                      borderRadius: 10,
-                      padding: "14px 20px",
-                      fontFamily: "'SF Mono', 'Fira Code', monospace",
-                      fontSize: 13,
-                      color: "#34d399",
-                      letterSpacing: "0.06em",
-                      wordBreak: "break-all",
-                      marginBottom: 16,
-                    }}
-                  >
-                    {token}
-                  </div>
-
-                  {/* Action buttons */}
-                  <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
-                    <button
-                      onClick={copyToken}
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 7,
-                        padding: "9px 18px",
-                        background: copied ? "rgba(16,185,129,0.15)" : "#27272a",
-                        border: copied ? "1px solid rgba(16,185,129,0.4)" : "1px solid #3f3f46",
-                        borderRadius: 8,
-                        color: copied ? "#34d399" : "#f4f4f5",
-                        fontSize: 13,
-                        fontWeight: 600,
-                        cursor: "pointer",
-                        transition: "all 0.2s",
-                      }}
-                    >
-                      <Copy size={14} />
-                      {copied ? "Copied!" : "Copy Token"}
-                    </button>
-
-                    <a
-                      href={buildStatusUrl(token)}
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 7,
-                        padding: "9px 18px",
-                        background: "rgba(16,185,129,0.1)",
-                        border: "1px solid rgba(16,185,129,0.25)",
-                        borderRadius: 8,
-                        color: "#34d399",
-                        fontSize: 13,
-                        fontWeight: 600,
-                        textDecoration: "none",
-                      }}
-                    >
-                      <ExternalLink size={14} />
-                      Check Status
-                    </a>
-
-                    <button
-                      onClick={() => { setToken(null); setError(null); }}
-                      style={{
-                        padding: "9px 18px",
-                        background: "transparent",
-                        border: "1px solid #27272a",
-                        borderRadius: 8,
-                        color: "#a1a1aa",
-                        fontSize: 13,
-                        fontWeight: 600,
-                        cursor: "pointer",
-                      }}
-                    >
-                      File Another
-                    </button>
-                  </div>
-                </Motion.div>
-
-              ) : (
-                // ── Form state ──────────────────────────────────────
-                <Motion.div
-                  key="form"
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  style={{
-                    background: "#18181b",
-                    border: "1px solid #27272a",
-                    borderRadius: 16,
-                    padding: "32px",
-                  }}
-                >
-                  {/* Error banner */}
-                  <AnimatePresence>
-                    {error && (
-                      <Motion.div
-                        key="err"
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        style={{
-                          display: "flex",
-                          alignItems: "flex-start",
-                          gap: 10,
-                          padding: "12px 14px",
-                          background: "rgba(239,68,68,0.08)",
-                          border: "1px solid rgba(239,68,68,0.25)",
-                          borderRadius: 8,
-                          marginBottom: 24,
-                          color: "#fca5a5",
-                          fontSize: 13,
-                        }}
-                      >
-                        <AlertCircle size={16} style={{ flexShrink: 0, marginTop: 1 }} />
-                        <span>{error}</span>
-                      </Motion.div>
-                    )}
-                  </AnimatePresence>
-
-                  <form onSubmit={handleFormSubmit} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-
-                    {/* Name + Email */}
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-                      <FieldGroup label="Full Legal Name">
-                        <input
-                          name="name"
-                          required
-                          placeholder="Jane Sullivan"
-                          style={inputStyle}
-                        />
-                      </FieldGroup>
-                      <FieldGroup label="Contact Email">
-                        <input
-                          name="email"
-                          type="email"
-                          required
-                          placeholder="you@example.com"
-                          style={inputStyle}
-                        />
-                      </FieldGroup>
-                    </div>
-
-                    {/* Category */}
-                    <FieldGroup label="Record Category">
-                      <select name="category" style={inputStyle} defaultValue={CATEGORIES[0]}>
-                        {CATEGORIES.map((c) => (
-                          <option key={c} value={c}>{c}</option>
-                        ))}
-                      </select>
-                    </FieldGroup>
-
-                    {/* Description / Details */}
-                    <FieldGroup
-                      label="Request Description"
-                      hint="Include relevant dates, addresses, document types, or other specifics. This becomes the record of your request."
-                    >
-                      <textarea
-                        name="description"
-                        required
-                        placeholder="Describe the specific records you are requesting…"
-                        style={{ ...inputStyle, minHeight: 140, resize: "vertical" }}
-                      />
-                    </FieldGroup>
-
-                    {/* Acknowledgment */}
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "flex-start",
-                        gap: 10,
-                        padding: "14px 16px",
-                        background: "#09090b",
-                        border: "1px solid #27272a",
-                        borderRadius: 8,
-                      }}
-                    >
-                      <input
-                        id="ack"
-                        type="checkbox"
-                        name="ack"
-                        required
-                        style={{ marginTop: 2, accentColor: "#10b981", flexShrink: 0 }}
-                      />
-                      <label
-                        htmlFor="ack"
-                        style={{ fontSize: 12, color: "#a1a1aa", lineHeight: 1.55, cursor: "pointer" }}
-                      >
-                        I understand this is a public records request submitted under M.G.L. c. 66,
-                        and that my name and the nature of my request constitute a public record.
-                      </label>
-                    </div>
-
-                    {/* Submit */}
-                    <button
-                      type="submit"
-                      disabled={isSubmitting}
-                      style={{
-                        width: "100%",
-                        padding: "13px 0",
-                        background: isSubmitting
-                          ? "rgba(16,185,129,0.35)"
-                          : "rgba(16,185,129,0.9)",
-                        border: "none",
-                        borderRadius: 10,
-                        color: "#051a0d",
-                        fontSize: 14,
-                        fontWeight: 800,
-                        letterSpacing: "0.08em",
-                        textTransform: "uppercase",
-                        cursor: isSubmitting ? "not-allowed" : "pointer",
-                        transition: "all 0.2s",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: 8,
-                      }}
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <Spinner /> Submitting…
-                        </>
-                      ) : (
-                        "File Official Request"
-                      )}
-                    </button>
-
-                  </form>
-                </Motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {/* ── Sidebar ─────────────────────────────────────────────── */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-
-            {/* Response protocol */}
-            <Sidebar
-              icon={<Clock size={14} />}
-              title="Response Protocol"
-              accentColor="#10b981"
-            >
-              <p style={{ fontSize: 12, color: "#a1a1aa", lineHeight: 1.65 }}>
-                {LEGAL_NOTICE}
-              </p>
-            </Sidebar>
-
-            {/* Exemptions */}
-            <Sidebar
-              icon={<ShieldAlert size={14} />}
-              title="Exemptions"
-              accentColor="#8b5cf6"
-            >
-              <p style={{ fontSize: 12, color: "#a1a1aa", lineHeight: 1.65 }}>
-                Certain records are exempt under M.G.L. c. 4 §7(26), including
-                personnel files, medical records, and active criminal investigation
-                materials. Exempt records will be identified in the town's response.
-              </p>
-            </Sidebar>
-
-            {/* Status check */}
-            <Sidebar
-              icon={<ExternalLink size={14} />}
-              title="Track Your Request"
-              accentColor="#f59e0b"
-            >
-              <p style={{ fontSize: 12, color: "#a1a1aa", lineHeight: 1.65, marginBottom: 10 }}>
-                After submitting, use your tracking token to check status at any time.
-              </p>
-              <a
-                href={PRR_STATUS_BASE}
-                style={{
-                  display: "inline-block",
-                  padding: "7px 14px",
-                  background: "rgba(245,158,11,0.1)",
-                  border: "1px solid rgba(245,158,11,0.25)",
-                  borderRadius: 6,
-                  color: "#f59e0b",
-                  fontSize: 12,
-                  fontWeight: 600,
-                  textDecoration: "none",
-                }}
-              >
-                Check Status →
-              </a>
-            </Sidebar>
-
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Sub-components ────────────────────────────────────────────────────────
-
-function FieldGroup({
-  label,
-  hint,
-  children,
-}: {
-  label: string;
-  hint?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-      <label
-        style={{
-          fontSize: 11,
-          fontWeight: 700,
-          textTransform: "uppercase",
-          letterSpacing: "0.08em",
-          color: "#a1a1aa",
-        }}
-      >
-        {label}
-      </label>
-      {children}
-      {hint && (
-        <span style={{ fontSize: 11, color: "#52525b", lineHeight: 1.5 }}>{hint}</span>
-      )}
-    </div>
-  );
-}
-
-function Sidebar({
-  icon,
-  title,
-  accentColor,
-  children,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  accentColor: string;
-  children: React.ReactNode;
-}) {
+export function LogicCommonsOS() {
   return (
     <div
       style={{
-        background: "#18181b",
-        border: "1px solid #27272a",
-        borderRadius: 12,
-        padding: "18px 20px",
+        background: COLORS.bg,
+        color: COLORS.text,
+        minHeight: "100vh",
+        fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
+        fontSize: "14px",
       }}
     >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 7,
-          marginBottom: 10,
-          color: accentColor,
-          fontSize: 11,
-          fontWeight: 700,
-          textTransform: "uppercase",
-          letterSpacing: "0.07em",
-        }}
-      >
-        {icon}
-        {title}
+      <div style={{ display: "flex", minHeight: "100vh" }}>
+        {/* ── SIDEBAR ────────────────────────────────────────────────────── */}
+        <aside
+          style={{
+            width: SIDEBAR_WIDTH,
+            background: "#18181b",
+            borderRight: `1px solid ${COLORS.border}`,
+            display: "flex",
+            flexDirection: "column",
+            position: "fixed",
+            top: 0,
+            left: 0,
+            bottom: 0,
+            boxShadow: "1px 0 0 #27272a",
+            zIndex: 30,
+          }}
+        >
+          {/* Brand */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "11px",
+              padding: "20px 18px 18px",
+              borderBottom: `1px solid ${COLORS.border}`,
+            }}
+          >
+            <div
+              style={{
+                width: "34px",
+                height: "34px",
+                background: `linear-gradient(135deg, ${COLORS.greenMid}, ${COLORS.green})`,
+                borderRadius: "8px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxShadow: "0 2px 8px rgba(16,185,129,0.3)",
+              }}
+            >
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.95)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="7" height="7" rx="1.5" />
+                <rect x="14" y="3" width="7" height="7" rx="1.5" />
+                <rect x="3" y="14" width="7" height="7" rx="1.5" />
+                <rect x="14" y="14" width="7" height="7" rx="1.5" />
+              </svg>
+            </div>
+            <div>
+              <div style={{ fontFamily: "system-ui", fontWeight: 600, fontSize: "13.5px", letterSpacing: "-0.01em" }}>
+                LogicCommons OS
+              </div>
+              <div style={{ fontSize: "10.5px", color: COLORS.muted, marginTop: "1px" }}>
+                PublicLogic LLC
+              </div>
+            </div>
+          </div>
+
+          {/* Navigation */}
+          <nav
+            style={{
+              flex: 1,
+              padding: "8px 10px 8px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "1px",
+            }}
+          >
+            <div style={{ fontSize: "9.5px", letterSpacing: "0.12em", textTransform: "uppercase", color: COLORS.muted, fontWeight: 600, padding: "16px 18px 6px" }}>
+              Navigation
+            </div>
+
+            {/* Home (active) */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "9px",
+                padding: "8px 10px",
+                borderRadius: "7px",
+                fontSize: "13px",
+                color: COLORS.green,
+                background: COLORS.greenLight,
+                fontWeight: 500,
+                cursor: "default",
+              }}
+            >
+              <Home size={15} />
+              Home
+            </div>
+
+            {/* Other nav items */}
+            {[
+              { icon: BookOpen, label: "Library", href: "#" },
+              { icon: Globe, label: "Environments", href: "#" },
+              { icon: Briefcase, label: "CaseSpace", href: "#" },
+              { icon: Settings, label: "Settings", href: "#" },
+            ].map((item, i) => (
+              <a
+                key={i}
+                href={item.href}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "9px",
+                  padding: "8px 10px",
+                  borderRadius: "7px",
+                  fontSize: "13px",
+                  color: COLORS.sub,
+                  textDecoration: "none",
+                  transition: "all 0.12s",
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = COLORS.bg;
+                  e.currentTarget.style.color = COLORS.text;
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = "transparent";
+                  e.currentTarget.style.color = COLORS.sub;
+                }}
+              >
+                <item.icon size={15} />
+                {item.label}
+              </a>
+            ))}
+
+            <div style={{ height: "1px", background: COLORS.border, margin: "8px 10px" }} />
+          </nav>
+
+          {/* Sidebar Footer */}
+          <div
+            style={{
+              padding: "14px 18px 18px",
+              borderTop: `1px solid ${COLORS.border}`,
+              background: COLORS.bg,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "9px",
+                padding: "9px 11px",
+                background: COLORS.panel,
+                border: `1px solid ${COLORS.border}`,
+                borderRadius: "8px",
+                marginBottom: "10px",
+              }}
+            >
+              <div
+                style={{
+                  width: "28px",
+                  height: "28px",
+                  borderRadius: "50%",
+                  background: `linear-gradient(135deg, ${COLORS.greenLight}, ${COLORS.greenMid})`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontWeight: 600,
+                  color: COLORS.green,
+                  fontSize: "11px",
+                }}
+              >
+                NB
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: "12px", fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  Nathan
+                </div>
+                <div style={{ fontSize: "10.5px", color: COLORS.muted, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  nathan@publiclogic.org
+                </div>
+              </div>
+            </div>
+
+            <button
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "7px",
+                fontSize: "12px",
+                color: COLORS.sub,
+                background: "none",
+                border: `1px solid ${COLORS.border}`,
+                borderRadius: "6px",
+                padding: "6px 12px",
+                cursor: "pointer",
+                width: "100%",
+                transition: "all 0.12s",
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = "#18181b";
+                e.currentTarget.style.color = COLORS.text;
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = "none";
+                e.currentTarget.style.color = COLORS.sub;
+              }}
+            >
+              <LogOut size={12} />
+              Log out
+            </button>
+          </div>
+        </aside>
+
+        {/* ── MAIN CONTENT ───────────────────────────────────────────────── */}
+        <div style={{ marginLeft: SIDEBAR_WIDTH, flex: 1, display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+          {/* Topbar */}
+          <div
+            style={{
+              background: "rgba(24,24,27,0.95)",
+              backdropFilter: "blur(12px)",
+              borderBottom: `1px solid ${COLORS.border}`,
+              padding: "0 36px",
+              height: "54px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              position: "sticky",
+              top: 0,
+              zIndex: 20,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.muted, fontWeight: 600 }}>
+              <LayoutGrid size={13} />
+              Entry Portal
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <button
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  fontSize: "13px",
+                  fontWeight: 500,
+                  border: `1px solid ${COLORS.border}`,
+                  background: COLORS.panel,
+                  borderRadius: "8px",
+                  padding: "7px 15px",
+                  cursor: "pointer",
+                  color: COLORS.sub,
+                  transition: "all 0.12s",
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = COLORS.bg;
+                  e.currentTarget.style.color = COLORS.text;
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = COLORS.panel;
+                  e.currentTarget.style.color = COLORS.sub;
+                }}
+              >
+                <Search size={13} />
+                Search
+              </button>
+
+              <button
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "7px",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  background: `linear-gradient(135deg, ${COLORS.greenMid}, ${COLORS.green})`,
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "8px",
+                  padding: "7px 16px",
+                  cursor: "pointer",
+                  boxShadow: "0 2px 8px rgba(16,185,129,0.28), 0 1px 2px rgba(0,0,0,0.08)",
+                  transition: "all 0.15s",
+                }}
+                onClick={() => alert("🚀 Launching PuddleJumper (demo)")}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.boxShadow = "0 4px 16px rgba(16,185,129,0.35), 0 1px 3px rgba(0,0,0,0.1)";
+                  e.currentTarget.style.transform = "translateY(-1px)";
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.boxShadow = "0 2px 8px rgba(16,185,129,0.28), 0 1px 2px rgba(0,0,0,0.08)";
+                  e.currentTarget.style.transform = "translateY(0)";
+                }}
+              >
+                <Send size={14} />
+                Launch PuddleJumper
+              </button>
+            </div>
+          </div>
+
+          {/* Content Area */}
+          <div style={{ padding: "48px 40px 40px", flex: 1, maxWidth: "1100px" }}>
+            {/* Hero */}
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "40px", gap: "24px" }}>
+              <div style={{ flex: 1 }}>
+                <div
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "7px",
+                    fontSize: "10.5px",
+                    letterSpacing: "0.14em",
+                    textTransform: "uppercase",
+                    color: COLORS.green,
+                    fontWeight: 600,
+                    background: COLORS.greenPale,
+                    border: `1px solid ${COLORS.greenLight}`,
+                    borderRadius: "100px",
+                    padding: "4px 10px",
+                    marginBottom: "14px",
+                  }}
+                >
+                  <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: COLORS.greenMid }} />
+                  LogicCommons OS · Entry Portal
+                </div>
+
+                <h1
+                  style={{
+                    fontSize: "clamp(2rem, 3.2vw, 2.7rem)",
+                    fontWeight: 700,
+                    lineHeight: 1.1,
+                    letterSpacing: "-0.025em",
+                    marginBottom: "12px",
+                  }}
+                >
+                  Good morning, <span style={{ color: COLORS.sub, fontWeight: 300 }}>Nathan.</span><br />
+                  Where are we working today?
+                </h1>
+
+                <p style={{ fontSize: "14px", color: COLORS.sub, lineHeight: 1.7, maxWidth: "480px" }}>
+                  Select your entry point below. Access is role-governed — every action is recordable, transferable, and defensible.
+                </p>
+              </div>
+
+              <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: "10px", paddingTop: "6px" }}>
+                <button
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "7px",
+                    fontSize: "12.5px",
+                    fontWeight: 500,
+                    color: COLORS.sub,
+                    border: `1px solid ${COLORS.border}`,
+                    background: COLORS.panel,
+                    borderRadius: "8px",
+                    padding: "8px 14px",
+                    cursor: "pointer",
+                    transition: "all 0.12s",
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.borderColor = COLORS.borderStrong;
+                    e.currentTarget.style.background = COLORS.bg;
+                    e.currentTarget.style.color = COLORS.text;
+                  }}
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={COLORS.sub} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="2" y="3" width="20" height="14" rx="2" />
+                    <path d="M8 21h8M12 17v4" />
+                  </svg>
+                  Connect Microsoft 365
+                </button>
+
+                <button
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "7px",
+                    fontSize: "12.5px",
+                    fontWeight: 500,
+                    color: "#fff",
+                    background: COLORS.green,
+                    border: `1px solid ${COLORS.green}`,
+                    borderRadius: "8px",
+                    padding: "8px 14px",
+                    cursor: "pointer",
+                    transition: "all 0.12s",
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.background = "#34d399"}
+                  onMouseOut={(e) => e.currentTarget.style.background = COLORS.green}
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.9)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
+                    <polyline points="15 3 21 3 21 9" />
+                    <line x1="10" y1="14" x2="21" y2="3" />
+                  </svg>
+                  Open SharePoint
+                </button>
+              </div>
+            </div>
+
+            {/* Cards Grid */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "16px", marginBottom: "24px" }}>
+              {/* Library Card */}
+              <a
+                href="#"
+                style={{
+                  background: COLORS.panel,
+                  border: `1px solid ${COLORS.border}`,
+                  borderRadius: "14px",
+                  padding: "26px",
+                  textDecoration: "none",
+                  color: "inherit",
+                  display: "flex",
+                  flexDirection: "column",
+                  transition: "all 0.18s",
+                  position: "relative",
+                  overflow: "hidden",
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.borderColor = COLORS.borderStrong;
+                  e.currentTarget.style.boxShadow = "0 8px 32px rgba(0,0,0,0.3), 0 2px 8px rgba(0,0,0,0.1)";
+                  e.currentTarget.style.transform = "translateY(-3px)";
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.borderColor = COLORS.border;
+                  e.currentTarget.style.boxShadow = "none";
+                  e.currentTarget.style.transform = "translateY(0)";
+                }}
+              >
+                <div style={{ fontSize: "9.5px", letterSpacing: "0.14em", textTransform: "uppercase", color: COLORS.muted, fontWeight: 600, marginBottom: "18px" }}>
+                  01 — Library
+                </div>
+                <div style={{ width: "44px", height: "44px", borderRadius: "11px", background: COLORS.greenLight, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "18px" }}>
+                  <BookOpen size={21} style={{ color: COLORS.green }} />
+                </div>
+                <div style={{ fontSize: "15.5px", fontWeight: 600, letterSpacing: "-0.01em", marginBottom: "9px" }}>
+                  LogicCommons Library
+                </div>
+                <div style={{ fontSize: "12.5px", color: COLORS.sub, lineHeight: 1.7, flex: 1 }}>
+                  Browse standards, templates, protocols, and reference materials maintained across the system.
+                </div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "22px", paddingTop: "16px", borderTop: `1px solid ${COLORS.border}` }}>
+                  <span style={{ fontSize: "12px", fontWeight: 600, color: COLORS.muted, display: "flex", alignItems: "center", gap: "4px" }}>
+                    Open Library <span style={{ transition: "transform 0.18s" }}>→</span>
+                  </span>
+                  <span style={{ fontSize: "9.5px", letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 600, padding: "3px 8px", borderRadius: "100px", background: COLORS.greenPale, color: COLORS.green, border: `1px solid ${COLORS.greenLight}` }}>
+                    Active
+                  </span>
+                </div>
+              </a>
+
+              {/* Environment Card */}
+              <a
+                href="#"
+                style={{
+                  background: COLORS.panel,
+                  border: `1px solid ${COLORS.border}`,
+                  borderRadius: "14px",
+                  padding: "26px",
+                  textDecoration: "none",
+                  color: "inherit",
+                  display: "flex",
+                  flexDirection: "column",
+                  transition: "all 0.18s",
+                  position: "relative",
+                  overflow: "hidden",
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.borderColor = COLORS.borderStrong;
+                  e.currentTarget.style.boxShadow = "0 8px 32px rgba(0,0,0,0.3), 0 2px 8px rgba(0,0,0,0.1)";
+                  e.currentTarget.style.transform = "translateY(-3px)";
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.borderColor = COLORS.border;
+                  e.currentTarget.style.boxShadow = "none";
+                  e.currentTarget.style.transform = "translateY(0)";
+                }}
+              >
+                <div style={{ fontSize: "9.5px", letterSpacing: "0.14em", textTransform: "uppercase", color: COLORS.muted, fontWeight: 600, marginBottom: "18px" }}>
+                  02 — Environment
+                </div>
+                <div style={{ width: "44px", height: "44px", borderRadius: "11px", background: COLORS.greenLight, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "18px" }}>
+                  <Globe size={21} style={{ color: COLORS.green }} />
+                </div>
+                <div style={{ fontSize: "15.5px", fontWeight: 600, letterSpacing: "-0.01em", marginBottom: "9px" }}>
+                  My Environment
+                </div>
+                <div style={{ fontSize: "12.5px", color: COLORS.sub, lineHeight: 1.7, flex: 1 }}>
+                  Your workspace, active modules, system preferences, and current deployment status.
+                </div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "22px", paddingTop: "16px", borderTop: `1px solid ${COLORS.border}` }}>
+                  <span style={{ fontSize: "12px", fontWeight: 600, color: COLORS.muted, display: "flex", alignItems: "center", gap: "4px" }}>
+                    Enter Environment <span style={{ transition: "transform 0.18s" }}>→</span>
+                  </span>
+                  <span style={{ fontSize: "9.5px", letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 600, padding: "3px 8px", borderRadius: "100px", background: COLORS.greenPale, color: COLORS.green, border: `1px solid ${COLORS.greenLight}` }}>
+                    Active
+                  </span>
+                </div>
+              </a>
+
+              {/* CaseSpace Card */}
+              <a
+                href="#"
+                style={{
+                  background: COLORS.panel,
+                  border: `1px solid ${COLORS.border}`,
+                  borderRadius: "14px",
+                  padding: "26px",
+                  textDecoration: "none",
+                  color: "inherit",
+                  display: "flex",
+                  flexDirection: "column",
+                  transition: "all 0.18s",
+                  position: "relative",
+                  overflow: "hidden",
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.borderColor = COLORS.borderStrong;
+                  e.currentTarget.style.boxShadow = "0 8px 32px rgba(0,0,0,0.3), 0 2px 8px rgba(0,0,0,0.1)";
+                  e.currentTarget.style.transform = "translateY(-3px)";
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.borderColor = COLORS.border;
+                  e.currentTarget.style.boxShadow = "none";
+                  e.currentTarget.style.transform = "translateY(0)";
+                }}
+              >
+                <div style={{ fontSize: "9.5px", letterSpacing: "0.14em", textTransform: "uppercase", color: COLORS.muted, fontWeight: 600, marginBottom: "18px" }}>
+                  03 — CaseSpace
+                </div>
+                <div style={{ width: "44px", height: "44px", borderRadius: "11px", background: COLORS.greenLight, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "18px" }}>
+                  <Briefcase size={21} style={{ color: COLORS.green }} />
+                </div>
+                <div style={{ fontSize: "15.5px", fontWeight: 600, letterSpacing: "-0.01em", marginBottom: "9px" }}>
+                  Personal CaseSpace
+                </div>
+                <div style={{ fontSize: "12.5px", color: COLORS.sub, lineHeight: 1.7, flex: 1 }}>
+                  Your active client and staff case files. Role-scoped access only. Records remain in system on exit.
+                </div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "22px", paddingTop: "16px", borderTop: `1px solid ${COLORS.border}` }}>
+                  <span style={{ fontSize: "12px", fontWeight: 600, color: COLORS.muted, display: "flex", alignItems: "center", gap: "4px" }}>
+                    Open CaseSpace <span style={{ transition: "transform 0.18s" }}>→</span>
+                  </span>
+                  <span style={{ fontSize: "9.5px", letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 600, padding: "3px 8px", borderRadius: "100px", background: COLORS.greenPale, color: COLORS.green, border: `1px solid ${COLORS.greenLight}` }}>
+                    Active
+                  </span>
+                </div>
+              </a>
+            </div>
+
+            {/* Status Strip */}
+            <div
+              style={{
+                background: COLORS.panel,
+                border: `1px solid ${COLORS.border}`,
+                borderRadius: "11px",
+                padding: "14px 22px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: "16px",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11.5px", color: COLORS.sub, padding: "4px 10px", borderRadius: "100px", border: `1px solid ${COLORS.border}`, background: COLORS.bg }}>
+                  <CheckCircle2 size={14} style={{ color: "#34d399" }} /> System operational
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11.5px", color: COLORS.sub, padding: "4px 10px", borderRadius: "100px", border: `1px solid ${COLORS.border}`, background: COLORS.bg }}>
+                  <CheckCircle2 size={14} style={{ color: "#34d399" }} /> VAULT connected
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11.5px", color: COLORS.sub, padding: "4px 10px", borderRadius: "100px", border: `1px solid ${COLORS.border}`, background: COLORS.bg }}>
+                  <CheckCircle2 size={14} style={{ color: "#34d399" }} /> Archive connected
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11.5px", color: COLORS.sub, padding: "4px 10px", borderRadius: "100px", border: `1px solid ${COLORS.border}`, background: COLORS.bg }}>
+                  <AlertTriangle size={14} style={{ color: COLORS.amber }} /> Calendar not connected
+                </div>
+              </div>
+
+              <div style={{ fontSize: "11px", color: COLORS.muted }}>
+                LogicCommons OS · v1.0 · PublicLogic LLC
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-      {children}
     </div>
   );
 }
-
-function Spinner() {
-  return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 14 14"
-      style={{ animation: "spin 700ms linear infinite" }}
-    >
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      <circle cx="7" cy="7" r="5" fill="none" stroke="rgba(5,26,13,0.3)" strokeWidth="2" />
-      <path d="M7 2a5 5 0 0 1 5 5" fill="none" stroke="rgba(5,26,13,0.9)" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-// ── Shared style ──────────────────────────────────────────────────────────
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  padding: "10px 12px",
-  background: "#09090b",
-  border: "1px solid #27272a",
-  borderRadius: 8,
-  color: "#f4f4f5",
-  fontSize: 13,
-  fontFamily: "inherit",
-  outline: "none",
-  transition: "border-color 0.15s",
-};

@@ -1,8 +1,8 @@
 {
-  "buildCommand": "cd \"PublicLogic OS Component Library (4)\" && npm run build",
-  "outputDirectory": "PublicLogic OS Component Library (4)/dist",
-  "framework": null,
-  "installCommand": "npm install && cd \"PublicLogic OS Component Library (4)\" && npm install",
+  "framework": "vite",
+  "installCommand": "npm ci && npm --prefix \"PublicLogic OS Component Library (4)\" ci",
+  "buildCommand": "node scripts/vercel-build.mjs",
+  "outputDirectory": "dist",
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ],

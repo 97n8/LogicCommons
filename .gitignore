@@ -25,3 +25,5 @@ PublicLogic OS Component Library (4)/supabase/functions/make-server-*/
 *.njsproj
 *.sln
 *.sw?
+.vercel
+.env*.local

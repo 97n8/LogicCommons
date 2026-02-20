@@ -515,12 +515,37 @@ export default function Dashboard() {
     return [...archieveRecords].sort(sortByCreatedDate).slice(0, 5);
   }, [archieveRecords]);
   const displayRecords = showcaseMode ? showcaseRecords : recentRecords;
+  const firstName = useMemo(() => {
+    const value = account?.name?.trim() || account?.username?.trim() || "";
+    return value.split(/[\s@]/)[0] || "";
+  }, [account?.name, account?.username]);
+  const timeGreeting = useMemo(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good morning";
+    if (hour < 18) return "Good afternoon";
+    return "Good evening";
+  }, []);
+  const dashboardTitle = firstName ? `${timeGreeting}, ${firstName}` : timeGreeting;
+  const dashboardSubtitle = showcaseMode
+    ? "Capture what’s emerging, then move work forward in ARCHIEVE."
+    : "Capture what’s emerging, route it quickly, and keep ARCHIEVE in sync.";
+
+  const nonShowcaseSecondMetric = localQueueCount;
+  const nonShowcaseSecondLabel = "Offline Queue";
+  const nonShowcaseThirdMetric = archieveRecords.length;
+  const nonShowcaseThirdLabel = "Total Records";
+
+  const appendCaptureTemplate = useCallback((prefix: "Issue" | "Decision" | "Observation" | "Link") => {
+    const timestamp = format(new Date(), "yyyy-MM-dd HH:mm");
+    const template = `${prefix}:\nContext:\nNext step:\nLogged: ${timestamp}`;
+    setCaptureText((current) => (current.trim() ? `${current}\n\n${template}` : template));
+  }, []);
 
   return (
     <div>
       <PageHeader
-        title="Good morning"
-        subtitle="Capture what’s emerging, then move work forward in ARCHIEVE."
+        title={dashboardTitle}
+        subtitle={dashboardSubtitle}
         actions={
           <>
             <Button
@@ -608,6 +633,12 @@ export default function Dashboard() {
           <div className="mt-2 text-sm font-semibold text-muted-foreground">
             Capture issues, decisions, observations, or links. Everything is recorded in ARCHIEVE so nothing gets lost.
           </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" onClick={() => appendCaptureTemplate("Issue")}>Issue</Button>
+            <Button size="sm" variant="outline" onClick={() => appendCaptureTemplate("Decision")}>Decision</Button>
+            <Button size="sm" variant="outline" onClick={() => appendCaptureTemplate("Observation")}>Observation</Button>
+            <Button size="sm" variant="outline" onClick={() => appendCaptureTemplate("Link")}>Link</Button>
+          </div>
           {localQueueCount > 0 && (
             <div className="mt-4 flex items-center gap-2 text-amber-600">
               <AlertCircle className="h-4 w-4" />
@@ -625,6 +656,7 @@ export default function Dashboard() {
             value={captureText}
             onChange={(e) => setCaptureText(e.target.value)}
           />
+          <div className="mt-2 text-xs text-muted-foreground">{captureText.length} characters</div>
           <div className="mt-4 flex gap-2">
             <Button
               className="rounded-full"
@@ -651,12 +683,12 @@ export default function Dashboard() {
                 <div className="text-sm text-muted-foreground">Connections</div>
               </div>
               <div>
-                <div className="text-3xl font-bold font-mono">{showcaseMode ? showcaseLegalHoldCount : "—"}</div>
-                <div className="text-sm text-muted-foreground">{showcaseMode ? "Legal Holds" : "Storage Load"}</div>
+                <div className="text-3xl font-bold font-mono">{showcaseMode ? showcaseLegalHoldCount : nonShowcaseSecondMetric}</div>
+                <div className="text-sm text-muted-foreground">{showcaseMode ? "Legal Holds" : nonShowcaseSecondLabel}</div>
               </div>
               <div>
-                <div className="text-3xl font-bold font-mono">{showcaseMode ? showcaseActiveItemCount : "—"}</div>
-                <div className="text-sm text-muted-foreground">{showcaseMode ? "Active Items" : "Active Nodes"}</div>
+                <div className="text-3xl font-bold font-mono">{showcaseMode ? showcaseActiveItemCount : nonShowcaseThirdMetric}</div>
+                <div className="text-sm text-muted-foreground">{showcaseMode ? "Active Items" : nonShowcaseThirdLabel}</div>
               </div>
             </div>
             <div className="mt-6 space-y-3">

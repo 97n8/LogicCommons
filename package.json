@@ -7,7 +7,9 @@
     "dev": "vite",
     "dev:app": "vite",
     "dev:components": "npm --prefix \"PublicLogic OS Component Library (4)\" run dev",
+    "dev:components:auth": "npm --prefix \"PublicLogic OS Component Library (4)\" run dev:auth",
     "dev:all": "concurrently -n app,components -c blue,green \"npm run dev:app\" \"npm run dev:components\"",
+    "dev:all:auth": "concurrently -n app,components -c blue,green \"npm run dev:app\" \"npm run dev:components:auth\"",
     "build": "tsc -b && vite build",
     "build:app": "tsc -b && vite build",
     "build:components": "npm --prefix \"PublicLogic OS Component Library (4)\" run build",
@@ -35,6 +37,7 @@
     "globals": "^16.5.0",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",
+    "vercel": "^50.22.0",
     "vite": "^7.2.4"
   }
 }
