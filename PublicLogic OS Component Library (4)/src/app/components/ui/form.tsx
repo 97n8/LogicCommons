@@ -104,7 +104,8 @@ export const FileSubmit = ({ onFilesChange, isLoading, API_BASE, publicAnonKey, 
     const newFiles = [...files];
 
     for (let i = 0; i < selectedFiles.length; i++) {
-      const file = selectedFiles[i];
+      const file = selectedFiles.item(i);
+      if (!file) continue;
       const formData = new FormData();
       formData.append('file', file);
       formData.append('dept', dept);

@@ -1,93 +1,108 @@
 @import "tailwindcss";
 
 @theme {
-  /* Shadcn-style semantic tokens */
-  /* Match PublicLogic brand system (styles.css) */
-  --color-background: #ffffff; /* page bg */
-  --color-foreground: #111827; /* ink */
+  /* LogicCommons OS base tokens (neutral, durable, theme-ready) */
+  --font-inter: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+
+  --radius-small: 6px;
+  --radius-default: 10px;
+  --radius-large: 16px;
+  --radius-pill: 999px;
+
+  --shadow-small: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-medium: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-large: 0 12px 24px rgba(0, 0, 0, 0.12);
+
+  --color-background: #f8fafc;
+  --color-foreground: #0f172a;
 
   --color-card: #ffffff;
-  --color-card-foreground: #111827;
+  --color-card-foreground: #0f172a;
 
   --color-popover: #ffffff;
-  --color-popover-foreground: #111827;
+  --color-popover-foreground: #0f172a;
 
-  --color-primary: #1d4d30; /* brand green */
+  --color-primary: #2563eb;
   --color-primary-foreground: #ffffff;
 
-  --color-secondary: #f6faf7; /* soft */
-  --color-secondary-foreground: #111827;
+  --color-secondary: #eef2ff;
+  --color-secondary-foreground: #0f172a;
 
-  --color-muted: #f3f8f5;
-  --color-muted-foreground: #6b7280; /* slate */
+  --color-muted: #f1f5f9;
+  --color-muted-foreground: #64748b;
 
-  --color-accent: #edf7ef;
-  --color-accent-foreground: #111827;
+  --color-accent: #dbeafe;
+  --color-accent-foreground: #0f172a;
 
   --color-destructive: #e11d48;
   --color-destructive-foreground: #fff1f2;
 
-  --color-border: #e2ece6; /* line */
-  --color-input: #d6e8dd;
+  --color-border: #e2e8f0;
+  --color-input: #cbd5e1;
   --color-input-background: #ffffff;
-  --color-ring: #2e7d32; /* accent green */
+  --color-ring: #2563eb;
 
-  /* Sidebar tokens used by shadcn sidebar */
-  --color-sidebar: #f6faf7;
-  --color-sidebar-foreground: #111827;
-  --color-sidebar-accent: #e8f5e9;
-  --color-sidebar-accent-foreground: #111827;
-  --color-sidebar-border: #dfece5;
-  --color-sidebar-ring: #2e7d32;
-
-  --radius-small: 12px;
-  --radius-default: 16px;
-  --radius-large: 20px;
-  --radius-pill: 999px;
-
-  --shadow-small: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-medium: 0 8px 18px rgba(0, 0, 0, 0.06);
-  --shadow-large: 0 20px 50px rgba(0, 0, 0, 0.1);
-
-  --font-inter: "Inter", system-ui, sans-serif;
+  --color-sidebar: #ffffff;
+  --color-sidebar-foreground: #0f172a;
+  --color-sidebar-accent: #dbeafe;
+  --color-sidebar-accent-foreground: #0f172a;
+  --color-sidebar-border: #e2e8f0;
+  --color-sidebar-ring: #2563eb;
 }
 
+[data-theme='dark'],
 .dark {
-  --color-background: #061a14;
-  --color-foreground: #e6fff5;
+  --color-background: #0f172a;
+  --color-foreground: #f1f5f9;
 
-  --color-card: #08231b;
-  --color-card-foreground: #e6fff5;
+  --color-card: #1e293b;
+  --color-card-foreground: #f1f5f9;
 
-  --color-popover: #08231b;
-  --color-popover-foreground: #e6fff5;
+  --color-popover: #1e293b;
+  --color-popover-foreground: #f1f5f9;
 
-  --color-primary: #10b981;
-  --color-primary-foreground: #042016;
+  --color-primary: #3b82f6;
+  --color-primary-foreground: #ffffff;
 
-  --color-secondary: #0a2a20;
-  --color-secondary-foreground: #e6fff5;
+  --color-secondary: #1e3a8a;
+  --color-secondary-foreground: #f1f5f9;
 
-  --color-muted: #0b2f24;
-  --color-muted-foreground: #9fd8c5;
+  --color-muted: #172554;
+  --color-muted-foreground: #94a3b8;
 
-  --color-accent: #0f3a2c;
-  --color-accent-foreground: #e6fff5;
+  --color-accent: #1e3a8a;
+  --color-accent-foreground: #f1f5f9;
 
   --color-destructive: #fb7185;
   --color-destructive-foreground: #3b0a13;
 
-  --color-border: #0f3a2c;
-  --color-input: #1a4b3a;
-  --color-input-background: #08231b;
-  --color-ring: #34d399;
+  --color-border: #334155;
+  --color-input: #475569;
+  --color-input-background: #1e293b;
+  --color-ring: #3b82f6;
 
-  --color-sidebar: #071f18;
-  --color-sidebar-foreground: #e6fff5;
-  --color-sidebar-accent: #0f3a2c;
-  --color-sidebar-accent-foreground: #e6fff5;
-  --color-sidebar-border: #0f3a2c;
-  --color-sidebar-ring: #34d399;
+  --color-sidebar: #1e293b;
+  --color-sidebar-foreground: #f1f5f9;
+  --color-sidebar-accent: #1e3a8a;
+  --color-sidebar-accent-foreground: #f1f5f9;
+  --color-sidebar-border: #334155;
+  --color-sidebar-ring: #3b82f6;
 }
 
 /* Environment branding overrides (make towns feel like separate governed spaces) */
@@ -118,9 +133,24 @@
 }
 
 @layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
   body {
     @apply bg-background text-foreground font-inter antialiased;
     margin: 0;
+    font-size: var(--text-md);
+    line-height: 1.5;
+    min-width: 320px;
   }
 
   h1 {
@@ -142,6 +172,11 @@
   label {
     @apply text-[13px] font-bold uppercase tracking-[0.05em] text-muted-foreground;
   }
+
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
 }
 
 @layer components {
@@ -155,5 +190,12 @@
 
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
   }
 }

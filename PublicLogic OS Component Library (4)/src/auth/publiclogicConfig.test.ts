@@ -1,14 +1,9 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { resolvePuddleJumperUrl } from "./publiclogicConfig";
+import { resolvePuddleJumperUrl, type PublicLogicRuntimeConfig } from "./publiclogicConfig";
 
 declare global {
   interface Window {
-    PUBLICLOGIC_OS_CONFIG?: {
-      puddleJumper?: {
-        baseUrl?: string;
-        path?: string;
-      };
-    };
+    PUBLICLOGIC_OS_CONFIG?: PublicLogicRuntimeConfig;
   }
 }
 

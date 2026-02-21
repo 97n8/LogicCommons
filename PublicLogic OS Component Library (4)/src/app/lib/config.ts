@@ -17,7 +17,8 @@ export interface AppConfig {
 
 export function getConfig(): AppConfig {
   const custom = (window as any).PUBLICLOGIC_OS_CONFIG;
-  const baseUrl = window.location.origin + import.meta.env.BASE_URL;
+  const basePath = (import.meta.env.BASE_URL || "/").replace(/\/+$/, "");
+  const baseUrl = `${window.location.origin}${basePath}`;
   
   return {
     msal: {

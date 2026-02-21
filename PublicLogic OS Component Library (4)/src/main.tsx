@@ -2,7 +2,7 @@ import { createRoot } from "react-dom/client";
 import { HashRouter } from "react-router-dom";
 import { MsalProvider } from "@azure/msal-react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import App from "./app/App.tsx";
+import App from "./app/App";
 import ThemeProvider from "./app/providers/ThemeProvider";
 import { msalInstance } from "./auth/msalInstance";
 import "./styles/index.css";

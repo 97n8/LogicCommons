@@ -94,7 +94,7 @@ export async function savePrrSubmission(sp: any, cfg: any, formData: any) {
   await ensureFolderPath(sp, sitePath, listName, [fy, "PHILLIPSTON", "PRR"]);
 
   // Generate filename
-  const date = new Date().toISOString().split('T')[0];
+  const date = new Date().toISOString().split('T')[0] ?? "";
   const slug = (formData.request || 'request').slice(0, 30).toLowerCase().replace(/[^a-z0-9]/g, '-');
   const filename = `PRR_${date}_${slug}.md`;
 

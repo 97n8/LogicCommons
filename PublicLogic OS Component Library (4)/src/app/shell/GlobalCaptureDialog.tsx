@@ -47,7 +47,7 @@ export default function GlobalCaptureDialog({
     const trimmed = text.trim();
     if (!trimmed) return;
 
-    const title = trimmed.split("\n")[0].trim().slice(0, 120) || "Capture";
+    const title = trimmed.split("\n")[0]?.trim().slice(0, 120) || "Capture";
     const body = trimmed;
     const input = {
       title,

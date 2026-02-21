@@ -32,7 +32,7 @@ const Schema = z.object({
     ),
   phone: z.string().trim().optional(),
   requestText: z.string().trim().min(3, "Please provide request details"),
-  agree: z.literal(true, { message: "Required" }),
+  agree: z.boolean().refine((v) => v === true, { message: "Required" }),
 });
 
 type FormValues = z.infer<typeof Schema>;

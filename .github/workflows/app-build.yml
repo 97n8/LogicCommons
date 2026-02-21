@@ -1,0 +1,51 @@
+name: App Build & Test
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    paths:
+      - 'APP/**'
+      - '.github/workflows/app-build.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: APP
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'APP/package-lock.json'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type-check
+        run: npx tsc -b --noEmit
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm test
+
+      - name: Audit (high severity)
+        run: npm audit --audit-level=high || echo "::warning::npm audit found high-severity issues"
+        continue-on-error: true
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: app-dist
+          path: APP/dist

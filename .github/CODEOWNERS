@@ -1,0 +1,9 @@
+# Default owners for everything in this repo
+* @97n8
+
+# APP-specific ownership
+/APP/ @97n8
+
+# CI and deploy config
+/.github/ @97n8
+/vercel.json @97n8

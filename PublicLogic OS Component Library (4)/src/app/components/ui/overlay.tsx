@@ -15,8 +15,8 @@ export const Table = ({ children, className }: { children: React.ReactNode, clas
   </div>
 );
 
-export const THead = ({ children }: { children: React.ReactNode }) => (
-  <thead className="bg-black/20 border-b border-line">
+export const THead = ({ children, className }: { children: React.ReactNode, className?: string }) => (
+  <thead className={cn("bg-black/20 border-b border-line", className)}>
     <tr>
       {children}
     </tr>
@@ -44,13 +44,13 @@ export const TH = ({ children, className }: { children: React.ReactNode, classNa
   </th>
 );
 
-export const TD = ({ children, className }: { children: React.ReactNode, className?: string }) => (
-  <td className={cn("px-4 py-4 text-[14px] font-normal", className)}>
+export const TD = ({ children, className, colSpan }: { children: React.ReactNode, className?: string, colSpan?: number }) => (
+  <td colSpan={colSpan} className={cn("px-4 py-4 text-[14px] font-normal", className)}>
     {children}
   </td>
 );
 
-export const Alert = ({ children, title, variant = 'info' }: { children: React.ReactNode, title?: string, variant?: 'info' | 'warning' | 'danger' | 'success' }) => {
+export const Alert = ({ children, title, variant = 'info', className }: { children: React.ReactNode, title?: string, variant?: 'info' | 'warning' | 'danger' | 'success', className?: string }) => {
   const variants = {
     info: "bg-accent-primary/5 border-accent-primary/20 text-accent-primary",
     warning: "bg-warning/5 border-warning/20 text-warning",
@@ -58,7 +58,7 @@ export const Alert = ({ children, title, variant = 'info' }: { children: React.R
     success: "bg-success/5 border-success/20 text-success"
   };
   return (
-    <div className={cn("p-4 rounded-small border flex flex-col gap-1", variants[variant])}>
+    <div className={cn("p-4 rounded-small border flex flex-col gap-1", variants[variant], className)}>
       {title && <span className="text-xs font-bold uppercase tracking-wider">{title}</span>}
       <div className="text-[13px]">{children}</div>
     </div>

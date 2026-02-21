@@ -25,3 +25,14 @@ PublicLogic OS Component Library (4)/supabase/functions/make-server-*/
 *.njsproj
 *.sln
 *.sw?
+.vercel
+.env*.local
+
+# Cleanup batch 1 artifacts
+build/
+out/
+coverage/
+.cache/
+.parcel-cache/
+.next/
+.turbo/

@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PublicLogic</title>
+    <script>
+      if (window.location.hostname === "www.publiclogic.org") {
+        const nextUrl = "https://publiclogic.org" + window.location.pathname + window.location.search + window.location.hash;
+        window.location.replace(nextUrl);
+      }
+    </script>
+    <style>
+      :root {
+        --bg: #0b1320;
+        --text: #e2e8f0;
+        --muted: #94a3b8;
+        --border: #1e293b;
+      }
+      *, *::before, *::after {
+        box-sizing: border-box;
+      }
+      html, body {
+        height: 100%;
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      }
+      body {
+        display: flex;
+        align-items: stretch;
+        justify-content: stretch;
+      }
+      .frame-shell {
+        position: fixed;
+        inset: 0;
+        background: var(--bg);
+      }
+      iframe {
+        border: 0;
+        width: 100%;
+        height: 100%;
+      }
+      .fallback {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: 12px;
+        text-align: center;
+        font-size: 14px;
+        color: var(--muted);
+        background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.35));
+      }
+      .fallback a {
+        color: var(--text);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="frame-shell" aria-label="PublicLogic Figma site">
+      <iframe
+        src="https://publiclogic.figma.site"
+        title="PublicLogic Figma"
+        allowfullscreen
+        loading="eager"
+        referrerpolicy="no-referrer"
+      ></iframe>
+      <div class="fallback">If the embed does not load, <a href="https://publiclogic.figma.site">open the Figma site</a>.</div>
+    </div>
+  </body>
+</html>

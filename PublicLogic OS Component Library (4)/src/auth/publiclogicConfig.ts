@@ -45,7 +45,8 @@ export function getAllowedEmails(): string[] {
 
 export function getMsalRuntimeConfig() {
   const custom = getRuntimeConfig();
-  const baseUrl = window.location.origin + import.meta.env.BASE_URL;
+  const basePath = (import.meta.env.BASE_URL || "/").replace(/\/+$/, "");
+  const baseUrl = `${window.location.origin}${basePath}`;
 
   const clientId =
     custom.msal?.clientId ?? "1b53d140-0779-4a64-943c-a11ba19ec0ce";

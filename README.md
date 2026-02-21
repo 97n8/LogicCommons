@@ -1,47 +1,29 @@
-## AGNOSTIC
+# LogicCommons — canonical app: APP/
 
-This repo contains two Vite + React projects:
+This repository has been reorganized so the canonical, deployable application lives in APP/.
 
-- `./` — a lightweight React sandbox app (Vite + TypeScript)
-- `PublicLogic OS Component Library (4)/` — the exported PublicLogic OS component bundle
-
-### View it locally
-
-#### App (root)
+## Quick start
 
 ```bash
-cd /Users/n8/AGNOSTIC
-npm install
+cd APP
+npm ci
 npm run dev
 ```
 
-Open the URL Vite prints (typically `http://localhost:5173/`).
-
-#### Component library bundle
+## Build / test
 
 ```bash
-cd "/Users/n8/AGNOSTIC/PublicLogic OS Component Library (4)"
-npm install
-npm run dev
+cd APP
+npm ci
+npm run build
+npm test
 ```
 
-Open `http://localhost:3000/` (the bundle’s `vite.config.ts` uses port 3000).
+## Deploy
 
-### Publish it (GitHub Pages)
+- **Vercel**: vercel.json is configured to install, build, and serve from APP/.
+- **GitHub Pages**: .github/workflows/app-build.yml builds APP/ on every push to main and on PRs that touch APP/**.
 
-This repo includes a GitHub Actions workflow that deploys the component bundle to GitHub Pages on every push to `main`:
+## Migration notes
 
-- Workflow: `/Users/n8/AGNOSTIC/.github/workflows/pages.yml:1`
-- Public URL (default): `https://97n8.github.io/AGNOSTIC/`
-
-First time only: in GitHub repo settings, set **Pages → Build and deployment → Source** to **GitHub Actions**.
-
-### Quality checks
-
-From the repo root:
-
-```bash
-npm run verify
-```
-
-This runs root lint + builds for both projects.
+See APP/CLEANUP_PLAN.md for the full migration history, decisions, and remaining items.
