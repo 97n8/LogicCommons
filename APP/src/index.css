@@ -86,11 +86,15 @@ body {
   min-width: 320px;
 }
 
-.os-root {
+/* ── shell layout ──────────────────────────────────────────── */
+
+.shell {
   display: grid;
   grid-template-columns: 260px 1fr;
   grid-template-rows: auto 1fr;
+  grid-template-columns: 210px 1fr;
   height: 100vh;
+  overflow: hidden;
 }
 
 .os-sidebar {
@@ -100,12 +104,41 @@ body {
   background: var(--color-surface);
   border-right: 1px solid var(--color-border);
   overflow: hidden;
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--color-bg);
+  border-right: 1px solid var(--color-border);
 }
 
-.os-topbar {
-  background: var(--color-surface);
+.brand {
+  flex-shrink: 0;
+  padding: 14px 16px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-muted);
   border-bottom: 1px solid var(--color-border);
-  padding: 0 var(--space-6);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color var(--transition-fast);
+}
+
+.brand:hover {
+  color: var(--color-text);
+}
+
+.nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-2) 0;
+}
+
+.nav-group {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -114,7 +147,26 @@ body {
 
 .os-main {
   padding: var(--space-6);
+  flex-direction: column;
+}
+
+.main {
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 0 var(--space-6);
+  height: 48px;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--text-sm);
+  color: var(--color-muted);
 }
 
 .surface {
@@ -151,15 +203,24 @@ body {
   opacity: 0.9;
 }
 
+/* nav-item base: see App.css for full definition (all: unset + border-left accent) */
+.nav-item {
+  display: flex;
+  cursor: pointer;
+}
+
 .nav-group-label {
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   color: var(--color-muted);
-  padding: var(--space-3) var(--space-3) var(--space-1);
+  opacity: 0.7;
+  padding: var(--space-3) var(--space-4) 2px;
   user-select: none;
 }
+
+/* hover/active handled in App.css */
 
 .grid {
   display: grid;

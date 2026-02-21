@@ -107,6 +107,7 @@ export default function App() {
 
             <main className="os-main">
 
+                <div className="page-content">
                 {live.error && <div className="error-banner">Connection issue: {live.error}</div>}
 
                 {page === 'Dashboard' && <DashboardPage repo={live.repo} openIssueCount={openIssues.length} openPRCount={openPRs.length} />}
@@ -128,6 +129,8 @@ export default function App() {
                 {page === 'Environments' && <EnvironmentsPage envBranches={envBranches} loading={live.loading} ctx={ctx} activeBranch={activeBranch} toast={toast} />}
                 {page === 'Settings' && <SettingsPage user={user} onSwitchRepo={() => setCtx(null)} />}
             </main>
+                </div>
+            </div>
 
             <div className="toast-stack">
                 {toasts.map(t => <div key={t.id} className={`toast toast-${t.type}`}>{t.msg}</div>)}
