@@ -221,9 +221,9 @@ describe('Shell after repo selection', () => {
 
   it('shows shell with nav after picking a repo', async () => {
     await renderAndPick()
-    expect(screen.getByText('Dashboard')).toBeInTheDocument()
-    expect(screen.getByText('Issues')).toBeInTheDocument()
-    expect(screen.getByText('Settings')).toBeInTheDocument()
+    expect(screen.getAllByText('Dashboard').length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByText('Issues').length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByText('Settings').length).toBeGreaterThanOrEqual(1)
   })
 
   it('shows repo name in brand area', async () => {
@@ -331,7 +331,7 @@ describe('Shell after repo selection', () => {
   it('navigates to Files page', async () => {
     await renderAndPick()
     fireEvent.click(screen.getByRole('button', { name: 'Files' }))
-    const main = document.querySelector('.main')
+    const main = document.querySelector('.os-main')
     expect(main).toBeInTheDocument()
   })
 

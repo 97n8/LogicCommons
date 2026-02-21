@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import './App.css'
 import * as gh from './github'
 import type { RepoCtx } from './github'
-import { formatDate, formatTime, NAV_GROUPS } from './helpers'
+import { formatDate, formatTime, NAV_GROUPS, NAV_ICONS } from './helpers'
 import type { NavPage } from './helpers'
 import { useToasts, useLiveData } from './hooks'
 import { StatusDot, Badge } from './components/shared'
@@ -68,17 +68,18 @@ export default function App() {
     const envBranches = live.branches.filter(b => b.name.startsWith('env/'))
 
     return (
-        <div className="shell">
-            <aside className="sidebar">
-                <div className="brand" onClick={() => setCtx(null)}>
-                    <span>{ctx.owner}/{ctx.repo}</span>
+        <div className="os-root">
+            <aside className="os-sidebar">
+                <div className="brand-block brand" onClick={() => setCtx(null)} role="button" tabIndex={0} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setCtx(null) } }}>
+                    <p className="brand-title">{ctx.owner}/{ctx.repo}</p>
                 </div>
-                <nav className="nav">
+                <nav className="nav-stack">
                     {NAV_GROUPS.map(group => (
                         <div key={group.label || 'ungrouped'} className="nav-group">
                             {group.label && <div className="nav-group-label">{group.label}</div>}
                             {group.pages.map(n => (
                                 <button key={n} className={`nav-item${page === n ? ' active' : ''}`} type="button" onClick={() => setPage(n)}>
+                                    <span aria-hidden="true" className="nav-icon">{NAV_ICONS[n]}</span>
                                     {n}
                                     {n === 'Issues' && <Badge n={openIssues.length} />}
                                     {n === 'PRs' && <Badge n={openPRs.length} />}
@@ -88,17 +89,23 @@ export default function App() {
                     ))}
                 </nav>
                 <div className="sidebar-footer">
-                    <button className="create-btn" type="button" onClick={() => setCreateOpen(true)}>+</button>
-                    <button type="button" onClick={() => setCmdOpen(true)}>⌘K</button>
+                    <button className="create-btn button primary" type="button" onClick={() => setCreateOpen(true)}>+ New</button>
+                    <button className="cmd-trigger" type="button" onClick={() => setCmdOpen(true)}>⌘K</button>
                 </div>
             </aside>
 
-            <div className="main">
-                <header className="topbar">
-                    <button type="button" onClick={live.refresh}>{live.loading ? 'Syncing' : 'Refresh'}</button>
+            <header className="os-topbar">
+                <div className="topbar-actions">
+                    <span className="topbar-page-title">{page}</span>
                     <StatusDot ok={live.error ? false : live.lastFetch ? true : null} />
+                </div>
+                <div className="topbar-actions">
                     <span className="topbar-time">{formatDate()} {formatTime()}</span>
-                </header>
+                    <button className="button topbar-sync" type="button" onClick={live.refresh}>{live.loading ? 'Syncing…' : 'Refresh'}</button>
+                </div>
+            </header>
+
+            <main className="os-main">
 
                 <div className="page-content">
                 {live.error && <div className="error-banner">Connection issue: {live.error}</div>}
@@ -121,6 +128,7 @@ export default function App() {
                 {page === 'Vault' && <VaultPage variables={live.variables} loading={live.loading} ctx={ctx} toast={toast} refresh={live.refresh} />}
                 {page === 'Environments' && <EnvironmentsPage envBranches={envBranches} loading={live.loading} ctx={ctx} activeBranch={activeBranch} toast={toast} />}
                 {page === 'Settings' && <SettingsPage user={user} onSwitchRepo={() => setCtx(null)} />}
+            </main>
                 </div>
             </div>
 

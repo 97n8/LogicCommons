@@ -44,6 +44,27 @@ export const NAV_GROUPS: { label: string; pages: readonly NavPage[] }[] = [
     { label: '', pages: ['Settings'] },
 ]
 
+export const NAV_ICONS: Record<NavPage, string> = {
+    Dashboard: '▦',
+    Today: '◉',
+    Issues: '●',
+    PRs: '⇌',
+    Lists: '≡',
+    Cases: '▤',
+    CI: '⚡',
+    Pipeline: '⏵',
+    Branches: '⑂',
+    Files: '◧',
+    Vault: '⊡',
+    Environments: '◎',
+    Labels: '◈',
+    Registry: '⊞',
+    Projects: '⊟',
+    Playbooks: '▷',
+    Tools: '⛭',
+    Settings: '⚙',
+}
+
 export function textColorForBg(hex: string): string {
     const r = parseInt(hex.slice(0, 2), 16)
     const g = parseInt(hex.slice(2, 4), 16)
