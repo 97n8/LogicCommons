@@ -95,8 +95,16 @@ export default function App() {
                     ))}
                 </nav>
                 <div className="sidebar-footer">
-                    <button className="create-btn button primary" type="button" onClick={() => openCreate()}>+ New</button>
-                    <button className="cmd-trigger" type="button" onClick={() => setCmdOpen(true)}>⌘K</button>
+                    <button className="create-btn" type="button" onClick={() => openCreate()}>
+                        <span className="create-icon">+</span>
+                        New
+                        <span className="create-shortcut">⌥N</span>
+                    </button>
+                    <button className="cmd-trigger" type="button" onClick={() => setCmdOpen(true)}>
+                        <span className="cmd-icon">⌘</span>
+                        <span className="cmd-label">Quick commands</span>
+                        <span className="cmd-shortcut">⌘K</span>
+                    </button>
                 </div>
             </aside>
 
