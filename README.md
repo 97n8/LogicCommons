@@ -11,6 +11,7 @@ npm run dev
 ```
 
 ## Build / test
+test
 
 ```bash
 cd APP
