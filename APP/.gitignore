@@ -1,0 +1,11 @@
+
+# Cleanup batch 1 artifacts
+dist/
+build/
+out/
+coverage/
+.cache/
+.vite/
+.parcel-cache/
+.next/
+.turbo/
