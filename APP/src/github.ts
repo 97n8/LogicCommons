@@ -572,6 +572,33 @@ export async function saveRegistryEntry(ctx: RepoCtx, entry: RegistryEntry): Pro
   await setVariable(ctx, REGISTRY_VAR, JSON.stringify(existing))
 }
 
+export async function archiveRegistryEntry(ctx: RepoCtx, owner: string, repoName: string): Promise<void> {
+  const existing = await fetchRegistry(ctx)
+  const idx = existing.findIndex(e => e.repoName === repoName && e.owner === owner)
+  if (idx < 0) throw new Error(`Unit ${owner}/${repoName} not found in registry`)
+  existing[idx] = { ...existing[idx], status: 'archived' }
+  await setVariable(ctx, REGISTRY_VAR, JSON.stringify(existing))
+}
+
+/** Compute deploy commands for a registry entry based on its deploy target. */
+export function deployCommandsForEntry(entry: RegistryEntry): string[] {
+  switch (entry.deployTarget) {
+    case 'vercel': return [`npx vercel --prod`]
+    case 'docker': return [`docker build -t ${entry.repoName} .`, `docker run -p 3000:3000 ${entry.repoName}`]
+    default: return [`# Deploy manually for target: ${entry.deployTarget}`]
+  }
+}
+
+/** Compute verification steps for a registry entry. */
+export function verifyStepsForEntry(entry: RegistryEntry): string[] {
+  return [
+    `git clone https://github.com/${entry.owner}/${entry.repoName}.git`,
+    `cd ${entry.repoName}`,
+    `npm install`,
+    `npm run build`,
+  ]
+}
+
 /* ── Environment scaffolding ───────────────────────────────── */
 
 /** Provisions a branch `env/{slug}` with scaffold files. Returns info for the caller to attach to an issue. */

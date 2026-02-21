@@ -1,7 +1,8 @@
 import { render, screen, cleanup, fireEvent, waitFor, act } from '@testing-library/react'
 import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest'
 import App from './App'
-import { inferRepoStatus, getTemplate, BUILTIN_TEMPLATES } from './github'
+import { inferRepoStatus, getTemplate, BUILTIN_TEMPLATES, deployCommandsForEntry, verifyStepsForEntry } from './github'
+import type { RegistryEntry } from './github'
 
 afterEach(() => {
   cleanup()
@@ -316,7 +317,7 @@ describe('Shell after repo selection', () => {
     await renderAndPick()
     fireEvent.click(screen.getByRole('button', { name: /^Registry/ }))
     expect(screen.getByText('Available Templates')).toBeInTheDocument()
-    expect(screen.getByText('Registered Repositories')).toBeInTheDocument()
+    expect(screen.getByText('Registered Units')).toBeInTheDocument()
   })
 
   it('Registry page shows built-in templates', async () => {
@@ -329,23 +330,23 @@ describe('Shell after repo selection', () => {
   it('Registry page shows scaffold button', async () => {
     await renderAndPick()
     fireEvent.click(screen.getByRole('button', { name: /^Registry/ }))
-    expect(screen.getByText('+ Scaffold Repo')).toBeInTheDocument()
+    expect(screen.getByText('+ Scaffold Unit')).toBeInTheDocument()
   })
 
   it('Registry scaffold form opens and closes', async () => {
     await renderAndPick()
     fireEvent.click(screen.getByRole('button', { name: /^Registry/ }))
-    fireEvent.click(screen.getByText('+ Scaffold Repo'))
-    expect(screen.getByPlaceholderText('Repository name')).toBeInTheDocument()
-    expect(screen.getByText('Scaffold Repository')).toBeInTheDocument()
+    fireEvent.click(screen.getByText('+ Scaffold Unit'))
+    expect(screen.getByPlaceholderText('Unit name')).toBeInTheDocument()
+    expect(screen.getByText('Scaffold Unit')).toBeInTheDocument()
     fireEvent.click(screen.getByText('✕ Cancel'))
-    expect(screen.queryByPlaceholderText('Repository name')).not.toBeInTheDocument()
+    expect(screen.queryByPlaceholderText('Unit name')).not.toBeInTheDocument()
   })
 
   it('Registry shows empty state when no entries', async () => {
     await renderAndPick()
     fireEvent.click(screen.getByRole('button', { name: /^Registry/ }))
-    expect(screen.getByText(/No repositories registered/)).toBeInTheDocument()
+    expect(screen.getByText(/No units registered/)).toBeInTheDocument()
   })
 
   it('navigates to Today page', async () => {
@@ -636,5 +637,59 @@ describe('Control Plane templates', () => {
     const pkg = tpl.files.find(f => f.path === 'package.json')
     expect(pkg).toBeDefined()
     expect(pkg!.content).toContain('custom-name')
+  })
+})
+
+/* ── Control Plane verbs: deploy & verify helpers ────────────── */
+
+describe('deployCommandsForEntry', () => {
+  const baseEntry: RegistryEntry = {
+    repoName: 'my-unit',
+    owner: 'testuser',
+    templateName: 'typescript-docker',
+    templateVersion: '1.0.0',
+    deployTarget: 'docker',
+    requiredSecrets: ['NODE_ENV', 'PORT'],
+    status: 'active',
+    upgradePath: null,
+    createdAt: new Date().toISOString(),
+  }
+
+  it('returns docker commands for docker target', () => {
+    const cmds = deployCommandsForEntry(baseEntry)
+    expect(cmds).toContain('docker build -t my-unit .')
+    expect(cmds).toContain('docker run -p 3000:3000 my-unit')
+  })
+
+  it('returns vercel command for vercel target', () => {
+    const cmds = deployCommandsForEntry({ ...baseEntry, deployTarget: 'vercel' })
+    expect(cmds).toContain('npx vercel --prod')
+  })
+
+  it('returns manual fallback for custom target', () => {
+    const cmds = deployCommandsForEntry({ ...baseEntry, deployTarget: 'custom' })
+    expect(cmds[0]).toContain('Deploy manually')
+  })
+})
+
+describe('verifyStepsForEntry', () => {
+  const baseEntry: RegistryEntry = {
+    repoName: 'my-unit',
+    owner: 'testuser',
+    templateName: 'typescript-docker',
+    templateVersion: '1.0.0',
+    deployTarget: 'docker',
+    requiredSecrets: [],
+    status: 'active',
+    upgradePath: null,
+    createdAt: new Date().toISOString(),
+  }
+
+  it('returns clone and build steps', () => {
+    const steps = verifyStepsForEntry(baseEntry)
+    expect(steps[0]).toContain('git clone')
+    expect(steps[0]).toContain('testuser/my-unit')
+    expect(steps).toContain('npm install')
+    expect(steps).toContain('npm run build')
   })
 })

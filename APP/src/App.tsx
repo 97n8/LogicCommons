@@ -441,6 +441,8 @@ export default function App() {
     const [scaffoldOpen, setScaffoldOpen] = useState(false)
     const [scaffoldTemplate, setScaffoldTemplate] = useState('typescript-docker')
     const [scaffolding, setScaffolding] = useState(false)
+    const [inspectEntry, setInspectEntry] = useState<RegistryEntry | null>(null)
+    const [lastScaffold, setLastScaffold] = useState<gh.ScaffoldResult | null>(null)
     const { toasts, push: toast } = useToasts()
     const live = useLiveData(ctx)
     const activeBranch = live.repo?.default_branch ?? 'main'
@@ -832,8 +834,8 @@ export default function App() {
                     <section className="page-registry">
                         <div className="page-header">
                             <h2>Registry</h2>
-                            <button className="button primary" type="button" onClick={() => setScaffoldOpen(!scaffoldOpen)}>
-                                {scaffoldOpen ? '✕ Cancel' : '+ Scaffold Repo'}
+                            <button className="button primary" type="button" onClick={() => { setScaffoldOpen(!scaffoldOpen); setLastScaffold(null) }}>
+                                {scaffoldOpen ? '✕ Cancel' : '+ Scaffold Unit'}
                             </button>
                         </div>
                         {scaffoldOpen && (
@@ -846,17 +848,20 @@ export default function App() {
                                 const rDesc = (fd.get('description') as string).trim()
                                 const rPrivate = fd.get('private') === 'on'
                                 if (!rName) return
+                                const existing = registry.find(en => en.repoName === rName)
+                                if (existing) { toast(`Unit "${rName}" already exists in the registry`, 'error'); return }
                                 setScaffolding(true)
                                 try {
                                     const result = await gh.scaffoldRepository(rName, rDesc || rName, scaffoldTemplate, rPrivate)
                                     await gh.saveRegistryEntry(ctx, result.registryEntry)
                                     setRegistry(prev => [...prev, result.registryEntry])
+                                    setLastScaffold(result)
                                     setScaffoldOpen(false)
                                     toast(`Scaffolded ${result.repo.full_name} with ${result.template.name}@${result.template.version}`, 'success')
                                 } catch (e) { toast(`Failed: ${e instanceof Error ? e.message : 'unknown'}`, 'error') }
                                 setScaffolding(false)
                             }}>
-                                <input name="name" className="form-input" placeholder="Repository name" required autoFocus />
+                                <input name="name" className="form-input" placeholder="Unit name" required autoFocus />
                                 <input name="description" className="form-input" placeholder="Description" />
                                 <div className="scaffold-row">
                                     <label className="picker-filter-label">Template</label>
@@ -867,8 +872,65 @@ export default function App() {
                                     </select>
                                 </div>
                                 <label className="form-checkbox"><input name="private" type="checkbox" defaultChecked /> Make private</label>
-                                <button className="button primary" type="submit" disabled={scaffolding}>{scaffolding ? 'Scaffolding…' : 'Scaffold Repository'}</button>
+                                <button className="button primary" type="submit" disabled={scaffolding}>{scaffolding ? 'Scaffolding…' : 'Scaffold Unit'}</button>
                             </form>
+                        )}
+                        {lastScaffold && (
+                            <div className="surface scaffold-result" data-testid="scaffold-result">
+                                <h3>Scaffold Complete</h3>
+                                <div className="scaffold-section">
+                                    <h4>Unit Structure</h4>
+                                    <ul>{lastScaffold.template.files.map(f => <li key={f.path}><code>{f.path}</code></li>)}</ul>
+                                </div>
+                                <div className="scaffold-section">
+                                    <h4>Required Configuration</h4>
+                                    <ul>{lastScaffold.registryEntry.requiredSecrets.map(s => <li key={s}><code>{s}</code></li>)}</ul>
+                                </div>
+                                <div className="scaffold-section">
+                                    <h4>Deploy Commands</h4>
+                                    <pre>{lastScaffold.deployCommands.join('\n')}</pre>
+                                </div>
+                                <div className="scaffold-section">
+                                    <h4>Verification Steps</h4>
+                                    <ol>{lastScaffold.verifySteps.map((s, i) => <li key={i}><code>{s}</code></li>)}</ol>
+                                </div>
+                                <div className="scaffold-section">
+                                    <h4>Identity Card</h4>
+                                    <dl className="identity-card">
+                                        <dt>Unit</dt><dd>{lastScaffold.registryEntry.owner}/{lastScaffold.registryEntry.repoName}</dd>
+                                        <dt>Template</dt><dd>{lastScaffold.registryEntry.templateName}@{lastScaffold.registryEntry.templateVersion}</dd>
+                                        <dt>Deployment context</dt><dd>{lastScaffold.registryEntry.deployTarget}</dd>
+                                        <dt>Status</dt><dd>{lastScaffold.registryEntry.status}</dd>
+                                    </dl>
+                                </div>
+                                <button className="button" type="button" onClick={() => setLastScaffold(null)}>Dismiss</button>
+                            </div>
+                        )}
+                        {inspectEntry && (
+                            <div className="surface inspect-panel" data-testid="inspect-panel">
+                                <div className="inspect-header">
+                                    <h3>Inspect: {inspectEntry.owner}/{inspectEntry.repoName}</h3>
+                                    <button type="button" onClick={() => setInspectEntry(null)}>✕</button>
+                                </div>
+                                <dl className="identity-card">
+                                    <dt>Unit</dt><dd>{inspectEntry.owner}/{inspectEntry.repoName}</dd>
+                                    <dt>Owner</dt><dd>{inspectEntry.owner}</dd>
+                                    <dt>Template</dt><dd>{inspectEntry.templateName}@{inspectEntry.templateVersion}</dd>
+                                    <dt>Deployment context</dt><dd>{inspectEntry.deployTarget}</dd>
+                                    <dt>Configuration keys</dt><dd>{inspectEntry.requiredSecrets.join(', ') || 'None'}</dd>
+                                    <dt>Status</dt><dd>{inspectEntry.status}</dd>
+                                    <dt>Upgrade path</dt><dd>{inspectEntry.upgradePath ?? 'None'}</dd>
+                                    <dt>Created</dt><dd>{inspectEntry.createdAt}</dd>
+                                </dl>
+                                <div className="scaffold-section">
+                                    <h4>Deploy Commands</h4>
+                                    <pre>{gh.deployCommandsForEntry(inspectEntry).join('\n')}</pre>
+                                </div>
+                                <div className="scaffold-section">
+                                    <h4>Verification Steps</h4>
+                                    <ol>{gh.verifyStepsForEntry(inspectEntry).map((s, i) => <li key={i}><code>{s}</code></li>)}</ol>
+                                </div>
+                            </div>
                         )}
                         <div className="registry-templates">
                             <h3>Available Templates</h3>
@@ -883,9 +945,9 @@ export default function App() {
                             </div>
                         </div>
                         <div className="registry-entries">
-                            <h3>Registered Repositories</h3>
+                            <h3>Registered Units</h3>
                             {registry.length === 0
-                                ? <EmptyState text="No repositories registered — scaffold a repo to add it to the registry" loading={live.loading} />
+                                ? <EmptyState text="No units registered — scaffold a unit to add it to the registry" loading={live.loading} />
                                 : <div className="item-list">
                                     {registry.map(entry => (
                                         <div key={`${entry.owner}/${entry.repoName}`} className="item-row registry-entry-row">
@@ -897,8 +959,21 @@ export default function App() {
                                                 <div>
                                                     <span className="tag">{entry.templateName}@{entry.templateVersion}</span>
                                                     <span className={`tag deploy-${entry.deployTarget}`}>{entry.deployTarget}</span>
-                                                    {entry.requiredSecrets.length > 0 && <span className="registry-secrets">Secrets: {entry.requiredSecrets.join(', ')}</span>}
+                                                    {entry.requiredSecrets.length > 0 && <span className="registry-secrets">Config: {entry.requiredSecrets.join(', ')}</span>}
                                                 </div>
+                                            </div>
+                                            <div className="registry-actions">
+                                                <button className="button" type="button" onClick={() => setInspectEntry(entry)}>Inspect</button>
+                                                {entry.status !== 'archived' && (
+                                                    <button className="button" type="button" onClick={async () => {
+                                                        if (!ctx) return
+                                                        try {
+                                                            await gh.archiveRegistryEntry(ctx, entry.owner, entry.repoName)
+                                                            setRegistry(prev => prev.map(e => e.repoName === entry.repoName && e.owner === entry.owner ? { ...e, status: 'archived' } : e))
+                                                            toast(`Archived ${entry.owner}/${entry.repoName}`, 'success')
+                                                        } catch (e) { toast(`Failed: ${e instanceof Error ? e.message : 'unknown'}`, 'error') }
+                                                    }}>Archive</button>
+                                                )}
                                             </div>
                                         </div>
                                     ))}
