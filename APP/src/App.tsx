@@ -307,7 +307,7 @@ function CreateModal({ onClose }: { onClose: () => void }) {
 
 /* ── command palette ───────────────────────────────────────── */
 
-const NAV_PAGES = ['Dashboard', 'Issues', 'PRs', 'CI', 'Branches', 'Labels', 'Files', 'Cases', 'Vault', 'Environments', 'Settings'] as const
+const NAV_PAGES = ['Dashboard', 'Today', 'Issues', 'PRs', 'Lists', 'CI', 'Pipeline', 'Branches', 'Labels', 'Files', 'Projects', 'Playbooks', 'Tools', 'Cases', 'Vault', 'Environments', 'Settings'] as const
 type NavPage = (typeof NAV_PAGES)[number]
 
 function CommandPalette({ onClose, onNav, onSwitchRepo, onCreateOpen }: {
@@ -432,6 +432,35 @@ export default function App() {
                     </section>
                 )}
 
+                {page === 'Today' && (
+                    <section className="page-today">
+                        <div className="today-header">
+                            <h2>{formatDate()}</h2>
+                            <p className="today-time">{formatTime()}</p>
+                        </div>
+                        <div className="today-summary">
+                            <MetricCard label="Open Issues" value={live.repo ? openIssues.length : NA} />
+                            <MetricCard label="Open PRs" value={live.repo ? openPRs.length : NA} />
+                            <MetricCard label="Branches" value={live.repo ? live.branches.length : NA} />
+                            <MetricCard label="Recent Runs" value={live.repo ? live.runs.length : NA} />
+                        </div>
+                        {live.runs.length > 0 && (
+                            <div className="today-section">
+                                <h3>Latest CI Runs</h3>
+                                <div className="item-list">
+                                    {live.runs.slice(0, 5).map(r => (
+                                        <a key={r.id} className="item-row" href={r.html_url} target="_blank" rel="noopener noreferrer">
+                                            <span className={`ci-badge ci-${r.conclusion ?? r.status}`}>{r.conclusion ?? r.status}</span>
+                                            <span>{r.name}</span>
+                                            <span>{relativeTime(r.created_at)}</span>
+                                        </a>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </section>
+                )}
+
                 {page === 'Issues' && (
                     <section className="page-issues">
                         <div className="filter-tabs">
@@ -487,6 +516,13 @@ export default function App() {
                     </section>
                 )}
 
+                {page === 'Lists' && (
+                    <section className="page-lists">
+                        <div className="page-header"><h2>Lists</h2></div>
+                        <EmptyState text="No lists yet — create a list to organize issues, tasks, or items" loading={live.loading} />
+                    </section>
+                )}
+
                 {page === 'CI' && (
                     <section className="page-ci">
                         {live.runs.length === 0
@@ -505,6 +541,35 @@ export default function App() {
                                         </div>
                                     </a>
                                 ))}
+                            </div>
+                        }
+                    </section>
+                )}
+
+                {page === 'Pipeline' && (
+                    <section className="page-pipeline">
+                        <div className="page-header"><h2>Pipeline</h2></div>
+                        {live.runs.length === 0
+                            ? <EmptyState text="No pipeline activity" loading={live.loading} />
+                            : <div className="pipeline-stages">
+                                <div className="pipeline-stage">
+                                    <h3>Recent</h3>
+                                    <div className="item-list">
+                                        {live.runs.slice(0, 10).map(r => (
+                                            <a key={r.id} className="item-row" href={r.html_url} target="_blank" rel="noopener noreferrer">
+                                                <span className={`ci-badge ci-${r.conclusion ?? r.status}`}>{r.conclusion ?? r.status}</span>
+                                                <div className="item-main">
+                                                    <span>{r.name}</span>
+                                                    <div>
+                                                        <span className="branch-name">{r.head_branch}</span>
+                                                        <span>{r.event}</span>
+                                                        <span>{relativeTime(r.created_at)}</span>
+                                                    </div>
+                                                </div>
+                                            </a>
+                                        ))}
+                                    </div>
+                                </div>
                             </div>
                         }
                     </section>
@@ -591,6 +656,27 @@ export default function App() {
                                 </div>
                             )}
                         </div>
+                    </section>
+                )}
+
+                {page === 'Projects' && (
+                    <section className="page-projects">
+                        <div className="page-header"><h2>Projects</h2></div>
+                        <EmptyState text="No projects — use projects to track and coordinate work across the repo" loading={live.loading} />
+                    </section>
+                )}
+
+                {page === 'Playbooks' && (
+                    <section className="page-playbooks">
+                        <div className="page-header"><h2>Playbooks</h2></div>
+                        <EmptyState text="No playbooks — create playbooks for standard operating procedures and runbooks" loading={live.loading} />
+                    </section>
+                )}
+
+                {page === 'Tools' && (
+                    <section className="page-tools">
+                        <div className="page-header"><h2>Tools</h2></div>
+                        <EmptyState text="No tools configured — add developer tools and utilities" loading={live.loading} />
                     </section>
                 )}
 

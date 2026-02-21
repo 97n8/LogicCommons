@@ -952,3 +952,52 @@
 	color: #f59e0b;
 	border-color: #f59e0b;
 }
+
+/* ── Today page ────────────────────────────────────────────── */
+
+.today-header {
+	margin-bottom: var(--space-4);
+}
+
+.today-header h2 {
+	font-size: 1.25rem;
+	font-weight: 700;
+	margin: 0;
+}
+
+.today-time {
+	font-size: 0.875rem;
+	color: var(--color-muted);
+	margin: var(--space-1) 0 0;
+}
+
+.today-summary {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: var(--space-4);
+	margin-bottom: var(--space-6);
+}
+
+.today-section {
+	margin-top: var(--space-4);
+}
+
+.today-section h3 {
+	font-size: 0.95rem;
+	font-weight: 600;
+	margin: 0 0 var(--space-3);
+}
+
+/* ── Pipeline page ─────────────────────────────────────────── */
+
+.pipeline-stages {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-4);
+}
+
+.pipeline-stage h3 {
+	font-size: 0.95rem;
+	font-weight: 600;
+	margin: 0 0 var(--space-3);
+}

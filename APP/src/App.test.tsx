@@ -190,7 +190,7 @@ describe('Shell after repo selection', () => {
 
   it('renders all nav items', async () => {
     await renderAndPick()
-    const navLabels = ['Dashboard', 'Issues', 'PRs', 'CI', 'Branches', 'Labels', 'Files', 'Cases', 'Vault', 'Environments', 'Settings']
+    const navLabels = ['Dashboard', 'Today', 'Issues', 'PRs', 'Lists', 'CI', 'Pipeline', 'Branches', 'Labels', 'Files', 'Projects', 'Playbooks', 'Tools', 'Cases', 'Vault', 'Environments', 'Settings']
     for (const label of navLabels) {
       expect(screen.getByRole('button', { name: new RegExp(label) })).toBeInTheDocument()
     }
@@ -260,6 +260,43 @@ describe('Shell after repo selection', () => {
     await renderAndPick()
     fireEvent.click(screen.getByRole('button', { name: /^Environments/ }))
     expect(screen.getByText(/No environments/)).toBeInTheDocument()
+  })
+
+  it('navigates to Today page', async () => {
+    await renderAndPick()
+    fireEvent.click(screen.getByRole('button', { name: /^Today/ }))
+    expect(screen.getByText('Open Issues')).toBeInTheDocument()
+    expect(screen.getByText('Recent Runs')).toBeInTheDocument()
+  })
+
+  it('navigates to Lists page', async () => {
+    await renderAndPick()
+    fireEvent.click(screen.getByRole('button', { name: /^Lists/ }))
+    expect(screen.getByText(/No lists yet/)).toBeInTheDocument()
+  })
+
+  it('navigates to Pipeline page', async () => {
+    await renderAndPick()
+    fireEvent.click(screen.getByRole('button', { name: /^Pipeline/ }))
+    expect(screen.getByText(/No pipeline activity/)).toBeInTheDocument()
+  })
+
+  it('navigates to Projects page', async () => {
+    await renderAndPick()
+    fireEvent.click(screen.getByRole('button', { name: /^Projects/ }))
+    expect(screen.getByText(/No projects/)).toBeInTheDocument()
+  })
+
+  it('navigates to Playbooks page', async () => {
+    await renderAndPick()
+    fireEvent.click(screen.getByRole('button', { name: /^Playbooks/ }))
+    expect(screen.getByText(/No playbooks/)).toBeInTheDocument()
+  })
+
+  it('navigates to Tools page', async () => {
+    await renderAndPick()
+    fireEvent.click(screen.getByRole('button', { name: /^Tools/ }))
+    expect(screen.getByText(/No tools configured/)).toBeInTheDocument()
   })
 
   it('navigates to Settings page', async () => {
