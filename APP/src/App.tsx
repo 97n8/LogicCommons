@@ -197,13 +197,19 @@ function RepoPicker({ onSelect, user }: { onSelect: (ctx: RepoCtx) => void; user
         setTimeout(() => inputRef.current?.focus(), 100)
     }, [])
 
+    const statusMap = useMemo(() => {
+        const map = new Map<number, gh.RepoStatusMeta>()
+        for (const r of repos) map.set(r.id, gh.inferRepoStatus(r))
+        return map
+    }, [repos])
+
     const filtered = useMemo(() => {
         let list = repos.filter(r =>
             r.full_name.toLowerCase().includes(query.toLowerCase()) ||
             (r.description ?? '').toLowerCase().includes(query.toLowerCase())
         )
-        if (tierFilter !== 'ALL') list = list.filter(r => gh.inferRepoStatus(r).tier === tierFilter)
-        if (deployFilter !== 'ALL') list = list.filter(r => gh.inferRepoStatus(r).deploymentStatus === deployFilter)
+        if (tierFilter !== 'ALL') list = list.filter(r => statusMap.get(r.id)?.tier === tierFilter)
+        if (deployFilter !== 'ALL') list = list.filter(r => statusMap.get(r.id)?.deploymentStatus === deployFilter)
 
         list = [...list].sort((a, b) => {
             switch (sortKey) {
@@ -215,7 +221,7 @@ function RepoPicker({ onSelect, user }: { onSelect: (ctx: RepoCtx) => void; user
             }
         })
         return list
-    }, [repos, query, tierFilter, deployFilter, sortKey])
+    }, [repos, query, tierFilter, deployFilter, sortKey, statusMap])
 
     async function handleCreate(e: FormEvent<HTMLFormElement>) {
         e.preventDefault()

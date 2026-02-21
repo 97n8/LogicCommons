@@ -88,6 +88,10 @@ export interface Repo {
 }
 
 /** Derive governance metadata from repo data heuristically. */
+const CORE_MIN_STARS = 5
+const CORE_MIN_FORKS = 2
+const MAX_DEPLOY_AGE_DAYS = 90
+
 export function inferRepoStatus(r: Repo): RepoStatusMeta {
   const topicsLower = r.topics.map(t => t.toLowerCase())
 
@@ -96,7 +100,7 @@ export function inferRepoStatus(r: Repo): RepoStatusMeta {
   else if (topicsLower.includes('core') || topicsLower.includes('production')) tier = 'CORE'
   else if (topicsLower.includes('pilot') || topicsLower.includes('beta')) tier = 'PILOT'
   else if (topicsLower.includes('experimental') || topicsLower.includes('spike')) tier = 'EXPERIMENTAL'
-  else if (r.stargazers_count >= 5 || r.forks_count >= 2) tier = 'CORE'
+  else if (r.stargazers_count >= CORE_MIN_STARS || r.forks_count >= CORE_MIN_FORKS) tier = 'CORE'
 
   let deploymentStatus: DeploymentStatus = 'NONE'
   if (topicsLower.includes('production') || topicsLower.includes('deployed')) deploymentStatus = 'PRODUCTION'
@@ -104,8 +108,8 @@ export function inferRepoStatus(r: Repo): RepoStatusMeta {
   else if (topicsLower.includes('local') || topicsLower.includes('dev')) deploymentStatus = 'LOCAL'
   else if (tier === 'CORE') deploymentStatus = 'PRODUCTION'
 
-  const daysSinceUpdate = (Date.now() - new Date(r.pushed_at).getTime()) / 86_400_000
-  const lastDeployAt = deploymentStatus !== 'NONE' && daysSinceUpdate < 90 ? r.pushed_at : null
+  const daysSincePush = (Date.now() - new Date(r.pushed_at).getTime()) / 86_400_000
+  const lastDeployAt = deploymentStatus !== 'NONE' && daysSincePush < MAX_DEPLOY_AGE_DAYS ? r.pushed_at : null
 
   return {
     tier,
