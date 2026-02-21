@@ -507,7 +507,6 @@ export interface ScaffoldResult {
 }
 
 export async function scaffoldRepository(
-  _owner: string,
   name: string,
   description: string,
   templateName: string,
@@ -539,11 +538,12 @@ export async function scaffoldRepository(
     createdAt: new Date().toISOString(),
   }
 
-  const deployCommands = template.deployTarget === 'vercel'
-    ? [`npx vercel --prod`]
-    : template.deployTarget === 'docker'
-      ? [`docker build -t ${name} .`, `docker run -p 3000:3000 ${name}`]
-      : [`# Deploy manually for target: ${template.deployTarget}`]
+  let deployCommands: string[]
+  switch (template.deployTarget) {
+    case 'vercel': deployCommands = [`npx vercel --prod`]; break
+    case 'docker': deployCommands = [`docker build -t ${name} .`, `docker run -p 3000:3000 ${name}`]; break
+    default: deployCommands = [`# Deploy manually for target: ${template.deployTarget}`]
+  }
 
   const verifySteps = [
     `git clone https://github.com/${ctx.owner}/${ctx.repo}.git`,

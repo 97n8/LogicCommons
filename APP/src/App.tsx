@@ -848,7 +848,7 @@ export default function App() {
                                 if (!rName) return
                                 setScaffolding(true)
                                 try {
-                                    const result = await gh.scaffoldRepository(ctx.owner, rName, rDesc || rName, scaffoldTemplate, rPrivate)
+                                    const result = await gh.scaffoldRepository(rName, rDesc || rName, scaffoldTemplate, rPrivate)
                                     await gh.saveRegistryEntry(ctx, result.registryEntry)
                                     setRegistry(prev => [...prev, result.registryEntry])
                                     setScaffoldOpen(false)
