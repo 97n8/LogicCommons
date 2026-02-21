@@ -34,6 +34,12 @@ export default function App() {
     const [page, setPage] = useState<NavPage>('Dashboard')
     const [cmdOpen, setCmdOpen] = useState(false)
     const [createOpen, setCreateOpen] = useState(false)
+    const [createView, setCreateView] = useState<'menu' | 'Issue' | 'Branch' | 'Label' | 'PR'>('menu')
+
+    function openCreate(view: 'menu' | 'Issue' | 'Branch' | 'Label' | 'PR' = 'menu') {
+        setCreateView(view)
+        setCreateOpen(true)
+    }
     const [issueFilter, setIssueFilter] = useState<'open' | 'closed' | 'all'>('open')
     const [filePath, setFilePath] = useState<string[]>([])
     const [dirEntries, setDirEntries] = useState<gh.FileEntry[]>([])
@@ -89,7 +95,7 @@ export default function App() {
                     ))}
                 </nav>
                 <div className="sidebar-footer">
-                    <button className="create-btn button primary" type="button" onClick={() => setCreateOpen(true)}>+ New</button>
+                    <button className="create-btn button primary" type="button" onClick={() => openCreate()}>+ New</button>
                     <button className="cmd-trigger" type="button" onClick={() => setCmdOpen(true)}>⌘K</button>
                 </div>
             </aside>
@@ -111,7 +117,7 @@ export default function App() {
                 {live.error && <div className="error-banner">Connection issue: {live.error}</div>}
 
                 {page === 'Dashboard' && <DashboardPage repo={live.repo} openIssueCount={openIssues.length} openPRCount={openPRs.length} ctx={ctx} />}
-                {page === 'Today' && <TodayPage repo={live.repo} openIssueCount={openIssues.length} openPRCount={openPRs.length} branches={live.branches} runs={live.runs} />}
+                {page === 'Today' && <TodayPage repo={live.repo} openIssueCount={openIssues.length} openPRCount={openPRs.length} branches={live.branches} runs={live.runs} prs={live.prs} issues={realIssues} />}
                 {page === 'Issues' && <IssuesPage issues={filteredIssues} loading={live.loading} filter={issueFilter} onFilterChange={setIssueFilter} ctx={ctx} />}
                 {page === 'PRs' && <PRsPage prs={live.prs} loading={live.loading} ctx={ctx} />}
                 {page === 'Lists' && <ListsPage loading={live.loading} ctx={ctx} />}
@@ -140,11 +146,21 @@ export default function App() {
                     onClose={() => setCmdOpen(false)}
                     onNav={p => { setPage(p); setCmdOpen(false) }}
                     onSwitchRepo={() => { setCtx(null); setCmdOpen(false) }}
-                    onCreateOpen={() => { setCreateOpen(true); setCmdOpen(false) }}
+                    onCreateOpen={(view) => { openCreate(view); setCmdOpen(false) }}
+                    ctx={ctx}
                 />
             )}
 
-            {createOpen && <CreateModal onClose={() => setCreateOpen(false)} />}
+            {createOpen && (
+                <CreateModal
+                    onClose={() => setCreateOpen(false)}
+                    ctx={ctx}
+                    branches={live.branches}
+                    toast={toast}
+                    refresh={live.refresh}
+                    initialView={createView}
+                />
+            )}
         </div>
     )
 }

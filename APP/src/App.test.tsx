@@ -501,7 +501,7 @@ describe('Shell after repo selection', () => {
     await renderAndPick()
     fireEvent.click(screen.getByText('⌘K'))
     expect(screen.getByText('Go to Dashboard')).toBeInTheDocument()
-    expect(screen.getByText('Create something')).toBeInTheDocument()
+    expect(screen.getByText('New Issue')).toBeInTheDocument()
     expect(screen.getByText('Switch repository')).toBeInTheDocument()
   })
 
@@ -524,10 +524,10 @@ describe('Shell after repo selection', () => {
     await renderAndPick()
     fireEvent.click(document.querySelector('.create-btn')!)
     await waitFor(() => expect(screen.getByText('Create')).toBeInTheDocument())
-    // Should show the 9 create options
+    // Should show the 4 create options
     expect(screen.getByText('Issue')).toBeInTheDocument()
-    expect(screen.getByText('Environment')).toBeInTheDocument()
-    expect(screen.getByText('Repository')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Pull Request' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Branch' })).toBeInTheDocument()
   })
 
   it('create modal closes on ✕', async () => {
@@ -554,12 +554,12 @@ describe('Shell after repo selection', () => {
     expect(screen.getByRole('button', { name: 'Label' })).toBeInTheDocument()
   })
 
-  it('create modal shows Variable form on click', async () => {
+  it('create modal shows Branch form on click', async () => {
     await renderAndPick()
     fireEvent.click(document.querySelector('.create-btn')!)
     await waitFor(() => screen.getByText('Create'))
-    expect(screen.getByText('Variable')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Variable' })).toBeInTheDocument()
+    expect(screen.getByText('Branch')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Branch' })).toBeInTheDocument()
   })
 
   it('create modal Back button returns to options', async () => {
@@ -572,20 +572,19 @@ describe('Shell after repo selection', () => {
     expect(screen.queryByText('Create')).not.toBeInTheDocument()
   })
 
-  it('create modal shows Workflow form on click', async () => {
+  it('create modal shows PR form button', async () => {
     await renderAndPick()
     fireEvent.click(document.querySelector('.create-btn')!)
     await waitFor(() => screen.getByText('Create'))
-    expect(screen.getByText('Workflow')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Workflow' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Pull Request' })).toBeInTheDocument()
   })
 
-  it('create modal shows Environment form on click', async () => {
+  it('create modal shows Label form button', async () => {
     await renderAndPick()
     fireEvent.click(document.querySelector('.create-btn')!)
     await waitFor(() => screen.getByText('Create'))
-    expect(screen.getByText('Environment')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Environment' })).toBeInTheDocument()
+    expect(screen.getByText('Label')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Label' })).toBeInTheDocument()
   })
 
   it('create modal shows coming soon for unimplemented options', async () => {
