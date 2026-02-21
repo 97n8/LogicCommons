@@ -29,6 +29,13 @@ function formatDate(): string {
     }).format(new Date())
 }
 
+function textColorForBg(hex: string): string {
+    const r = parseInt(hex.slice(0, 2), 16)
+    const g = parseInt(hex.slice(2, 4), 16)
+    const b = parseInt(hex.slice(4, 6), 16)
+    return (r * 0.299 + g * 0.587 + b * 0.114) > 150 ? '#000' : '#fff'
+}
+
 /* ── toast ─────────────────────────────────────────────────── */
 
 type ToastType = 'success' | 'error' | 'info'
@@ -346,14 +353,30 @@ export default function App() {
     const [page, setPage] = useState<NavPage>('Dashboard')
     const [cmdOpen, setCmdOpen] = useState(false)
     const [createOpen, setCreateOpen] = useState(false)
-    const { toasts } = useToasts()
+    const [issueFilter, setIssueFilter] = useState<'open' | 'closed' | 'all'>('open')
+    const [filePath, setFilePath] = useState<string[]>([])
+    const [dirEntries, setDirEntries] = useState<gh.FileEntry[]>([])
+    const [openFile, setOpenFile] = useState<{ path: string; content: string; sha: string } | null>(null)
+    const [editContent, setEditContent] = useState('')
+    const [commitMsg, setCommitMsg] = useState('')
+    const { toasts, push: toast } = useToasts()
     const live = useLiveData(ctx)
+    const activeBranch = live.repo?.default_branch ?? 'main'
 
     useEffect(() => {
         if (gh.hasToken()) {
             gh.fetchUser().then(setUser).catch(() => {})
         }
     }, [])
+
+    useEffect(() => {
+        if (page !== 'Files' || !ctx) return
+        let cancelled = false
+        gh.fetchDirContents(ctx, filePath.join('/'), activeBranch)
+            .then(entries => { if (!cancelled) setDirEntries(Array.isArray(entries) ? entries : []) })
+            .catch(() => { if (!cancelled) setDirEntries([]) })
+        return () => { cancelled = true }
+    }, [page, ctx, filePath, activeBranch])
 
     if (!ctx) {
         return (
@@ -366,6 +389,9 @@ export default function App() {
     const realIssues = live.issues.filter(i => !i.pull_request)
     const openIssues = realIssues.filter(i => i.state === 'open')
     const openPRs = live.prs.filter(p => p.state === 'open')
+    const filteredIssues = issueFilter === 'all' ? realIssues : realIssues.filter(i => i.state === issueFilter)
+    const cases = realIssues.filter(i => i.labels.some(l => l.name.toLowerCase().includes('case')))
+    const envBranches = live.branches.filter(b => b.name.startsWith('env/'))
 
     return (
         <div className="shell">
@@ -409,60 +435,219 @@ export default function App() {
                 {page === 'Issues' && (
                     <section className="page-issues">
                         <div className="filter-tabs">
-                            <button type="button">open</button>
-                            <button type="button">closed</button>
-                            <button type="button">all</button>
+                            <button type="button" className={issueFilter === 'open' ? 'active' : ''} onClick={() => setIssueFilter('open')}>open</button>
+                            <button type="button" className={issueFilter === 'closed' ? 'active' : ''} onClick={() => setIssueFilter('closed')}>closed</button>
+                            <button type="button" className={issueFilter === 'all' ? 'active' : ''} onClick={() => setIssueFilter('all')}>all</button>
                         </div>
-                        {realIssues.length === 0 && <EmptyState text="No open issues" loading={live.loading} />}
+                        {filteredIssues.length === 0
+                            ? <EmptyState text="No open issues" loading={live.loading} />
+                            : <div className="item-list">
+                                {filteredIssues.map(i => (
+                                    <a key={i.number} className="item-row" href={i.html_url} target="_blank" rel="noopener noreferrer">
+                                        <div className="item-main">
+                                            <div className="item-title-row">
+                                                <span className="item-number">#{i.number}</span>
+                                                <span>{i.title}</span>
+                                                <span className={`tag ${i.state}`}>{i.state}</span>
+                                            </div>
+                                            <div>
+                                                {i.labels.map(l => <span key={l.name} className="tag" style={{ background: `#${l.color}`, color: textColorForBg(l.color) }}>{l.name}</span>)}
+                                                <span>{relativeTime(i.created_at)}</span>
+                                            </div>
+                                        </div>
+                                    </a>
+                                ))}
+                            </div>
+                        }
                     </section>
                 )}
 
                 {page === 'PRs' && (
                     <section className="page-prs">
-                        {live.prs.length === 0 && <EmptyState text="No open PRs" loading={live.loading} />}
+                        {live.prs.length === 0
+                            ? <EmptyState text="No open PRs" loading={live.loading} />
+                            : <div className="item-list">
+                                {live.prs.map(p => (
+                                    <a key={p.number} className="item-row" href={p.html_url} target="_blank" rel="noopener noreferrer">
+                                        <div className="item-main">
+                                            <div className="item-title-row">
+                                                <span className="item-number">#{p.number}</span>
+                                                <span>{p.title}</span>
+                                                {p.draft && <span className="tag draft">draft</span>}
+                                            </div>
+                                            <div>
+                                                <span className="branch-name">{p.head.ref}</span> → <span className="branch-name">{p.base.ref}</span>
+                                                {p.merged_at && <span>{relativeTime(p.merged_at)}</span>}
+                                            </div>
+                                        </div>
+                                    </a>
+                                ))}
+                            </div>
+                        }
                     </section>
                 )}
 
                 {page === 'CI' && (
                     <section className="page-ci">
-                        {live.runs.length === 0 && <EmptyState text="No workflow runs" loading={live.loading} />}
+                        {live.runs.length === 0
+                            ? <EmptyState text="No workflow runs" loading={live.loading} />
+                            : <div className="item-list">
+                                {live.runs.map(r => (
+                                    <a key={r.id} className="item-row" href={r.html_url} target="_blank" rel="noopener noreferrer">
+                                        <span className={`ci-badge ci-${r.conclusion ?? r.status}`}>{r.conclusion ?? r.status}</span>
+                                        <div className="item-main">
+                                            <span>{r.name}</span>
+                                            <div>
+                                                <span className="branch-name">{r.head_branch}</span>
+                                                <span>{r.event}</span>
+                                                <span>{relativeTime(r.created_at)}</span>
+                                            </div>
+                                        </div>
+                                    </a>
+                                ))}
+                            </div>
+                        }
                     </section>
                 )}
 
                 {page === 'Branches' && (
                     <section className="page-branches">
-                        {live.branches.map(b => <div key={b.name}>{b.name}</div>)}
-                        {live.branches.length === 0 && <EmptyState text="No branches" loading={live.loading} />}
+                        {live.branches.length === 0
+                            ? <EmptyState text="No branches" loading={live.loading} />
+                            : <div className="item-list">
+                                {live.branches.map(b => (
+                                    <div key={b.name} className="item-row">
+                                        <span>{b.name}</span>
+                                        {b.protected && <span className="tag protected">protected</span>}
+                                        {b.name === live.repo?.default_branch && <span className="tag default-tag">default</span>}
+                                        <span>{b.commit.sha.slice(0, 7)}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        }
                     </section>
                 )}
 
                 {page === 'Labels' && (
                     <section className="page-labels">
-                        {live.labels.length === 0 && <EmptyState text="No labels" loading={live.loading} />}
+                        {live.labels.length === 0
+                            ? <EmptyState text="No labels" loading={live.loading} />
+                            : <div className="label-grid">
+                                {live.labels.map(l => (
+                                    <span key={l.name} className="label-chip large" style={{ background: `#${l.color}`, color: textColorForBg(l.color) }}>{l.name}</span>
+                                ))}
+                            </div>
+                        }
                     </section>
                 )}
 
                 {page === 'Files' && (
                     <section className="page-files">
-                        <EmptyState text="Browse files" />
+                        <div className="files-layout">
+                            <div className="breadcrumb">
+                                <button type="button" onClick={() => { setFilePath([]); setOpenFile(null) }}>root</button>
+                                {filePath.map((seg, i) => (
+                                    <button key={filePath.slice(0, i + 1).join('/')} type="button" onClick={() => { setFilePath(filePath.slice(0, i + 1)); setOpenFile(null) }}>/ {seg}</button>
+                                ))}
+                            </div>
+                            {openFile ? (
+                                <div className="file-editor">
+                                    <textarea className="editor-textarea" value={editContent} onChange={e => setEditContent(e.target.value)} />
+                                    <div className="editor-actions">
+                                        <input className="form-input" placeholder="Commit message" value={commitMsg} onChange={e => setCommitMsg(e.target.value)} />
+                                        <button className="button primary" type="button" onClick={async () => {
+                                            if (!ctx) return
+                                            try {
+                                                await gh.putFile(ctx, openFile.path, gh.encodeContent(editContent), commitMsg || `Update ${openFile.path}`, activeBranch, openFile.sha)
+                                                toast('File saved', 'success')
+                                                setOpenFile(null)
+                                                setCommitMsg('')
+                                            } catch (e) { toast(`Failed to save file: ${e instanceof Error ? e.message : 'unknown'}`, 'error') }
+                                        }}>Save</button>
+                                        <button className="button" type="button" onClick={() => setOpenFile(null)}>Cancel</button>
+                                    </div>
+                                </div>
+                            ) : dirEntries.length === 0 ? (
+                                <EmptyState text="Browse files" />
+                            ) : (
+                                <div className="file-tree">
+                                    {dirEntries.map(entry => (
+                                        <div key={entry.path} className="file-entry" onClick={async () => {
+                                            if (entry.type === 'dir') {
+                                                setFilePath([...filePath, entry.name])
+                                            } else {
+                                                try {
+                                                    const file = await gh.fetchFileContent(ctx, entry.path, activeBranch)
+                                                    const content = gh.decodeContent(file.content)
+                                                    setOpenFile({ path: file.path, content, sha: file.sha })
+                                                    setEditContent(content)
+                                                } catch (err) { toast(`Failed to load file: ${err instanceof Error ? err.message : 'unknown'}`, 'error') }
+                                            }
+                                        }}>
+                                            <span className="file-icon" aria-label={entry.type === 'dir' ? 'Directory' : 'File'}>{entry.type === 'dir' ? '📁' : '📄'}</span>
+                                            <span className="file-name">{entry.name}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </section>
                 )}
 
                 {page === 'Cases' && (
                     <section className="page-cases">
-                        <EmptyState text="No open cases" loading={live.loading} />
+                        {cases.length === 0
+                            ? <EmptyState text="No open cases" loading={live.loading} />
+                            : <div className="item-list">
+                                {cases.map(c => {
+                                    const status = c.state === 'closed' ? 'closed'
+                                        : c.labels.some(l => l.name.toLowerCase().includes('resolved')) ? 'resolved'
+                                        : c.labels.some(l => l.name.toLowerCase().includes('provisioned')) ? 'provisioned'
+                                        : 'open'
+                                    return (
+                                        <a key={c.number} className="item-row case-row" href={c.html_url} target="_blank" rel="noopener noreferrer">
+                                            <span className={`case-status case-${status}`}>{status}</span>
+                                            <div className="item-main">
+                                                <span>{c.title}</span>
+                                                {c.body && <p>{c.body.slice(0, 120)}</p>}
+                                            </div>
+                                        </a>
+                                    )
+                                })}
+                            </div>
+                        }
                     </section>
                 )}
 
                 {page === 'Vault' && (
                     <section className="page-vault">
-                        {live.variables.length === 0 && <EmptyState text="No variables in vault" loading={live.loading} />}
+                        {live.variables.length === 0
+                            ? <EmptyState text="No variables in vault" loading={live.loading} />
+                            : <div className="item-list">
+                                {live.variables.map(v => (
+                                    <div key={v.name} className="item-row vault-row">
+                                        <span className="vault-name">{v.name}</span>
+                                        <span className="vault-value">{v.value}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        }
                     </section>
                 )}
 
                 {page === 'Environments' && (
                     <section className="page-environments">
-                        <EmptyState text="No environments" loading={live.loading} />
+                        {envBranches.length === 0
+                            ? <EmptyState text="No environments" loading={live.loading} />
+                            : <div className="item-list">
+                                {envBranches.map(b => (
+                                    <div key={b.name} className="item-row env-row">
+                                        <span className="tag env-tag">{b.name}</span>
+                                        <span>{b.commit.sha.slice(0, 7)}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        }
                     </section>
                 )}
 
