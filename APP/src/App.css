@@ -933,7 +933,9 @@
 	color: #ef4444;
 }
 
-.vault-add-form {
+.vault-add-form,
+.run-workflow-form,
+.env-create-form {
 	display: flex;
 	flex-direction: column;
 	gap: var(--space-3);

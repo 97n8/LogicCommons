@@ -59,6 +59,7 @@ interface LiveState {
     issues: gh.Issue[]
     prs: gh.PR[]
     runs: gh.WorkflowRun[]
+    workflows: gh.Workflow[]
     branches: gh.Branch[]
     labels: gh.Label[]
     variables: gh.Variable[]
@@ -69,7 +70,7 @@ interface LiveState {
 
 function useLiveData(ctx: RepoCtx | null) {
     const [state, setState] = useState<LiveState>({
-        repo: null, issues: [], prs: [], runs: [], branches: [], labels: [], variables: [],
+        repo: null, issues: [], prs: [], runs: [], workflows: [], branches: [], labels: [], variables: [],
         loading: false, error: null, lastFetch: null,
     })
 
@@ -77,16 +78,17 @@ function useLiveData(ctx: RepoCtx | null) {
         if (!ctx) return
         setState(p => ({ ...p, loading: true, error: null }))
         try {
-            const [repo, issues, prs, runs, branches, labels, variables] = await Promise.all([
+            const [repo, issues, prs, runs, workflows, branches, labels, variables] = await Promise.all([
                 gh.fetchRepo(ctx),
                 gh.fetchIssues(ctx, 'all').catch(() => [] as gh.Issue[]),
                 gh.fetchPRs(ctx).catch(() => [] as gh.PR[]),
                 gh.fetchWorkflowRuns(ctx).catch(() => [] as gh.WorkflowRun[]),
+                gh.fetchWorkflows(ctx).catch(() => [] as gh.Workflow[]),
                 gh.fetchBranches(ctx).catch(() => [] as gh.Branch[]),
                 gh.fetchLabels(ctx).catch(() => [] as gh.Label[]),
                 gh.fetchVariables(ctx).catch(() => [] as gh.Variable[]),
             ])
-            setState({ repo, issues, prs, runs, branches, labels, variables, loading: false, error: null, lastFetch: new Date() })
+            setState({ repo, issues, prs, runs, workflows, branches, labels, variables, loading: false, error: null, lastFetch: new Date() })
         } catch (err) {
             setState(p => ({ ...p, loading: false, error: err instanceof Error ? err.message : 'Fetch failed' }))
         }
@@ -364,11 +366,13 @@ function TokenSetup({ onSaved }: { onSaved: () => void }) {
 
 /* ── universal create modal ────────────────────────────────── */
 
-function CreateModal({ ctx, onClose, toast, onCreated }: {
+function CreateModal({ ctx, onClose, toast, onCreated, workflows, activeBranch }: {
     ctx: RepoCtx
     onClose: () => void
     toast: (msg: string, type: ToastType) => void
     onCreated: () => void
+    workflows: gh.Workflow[]
+    activeBranch: string
 }) {
     const [active, setActive] = useState<string | null>(null)
     const [submitting, setSubmitting] = useState(false)
@@ -464,7 +468,59 @@ function CreateModal({ ctx, onClose, toast, onCreated }: {
                         </form>
                     )}
 
-                    {active && !['Issue', 'Label', 'Variable'].includes(active) && (
+                    {active === 'Workflow' && (
+                        <form className="create-form" onSubmit={async (e: FormEvent<HTMLFormElement>) => {
+                            e.preventDefault()
+                            const fd = new FormData(e.currentTarget)
+                            const wfId = (fd.get('workflow') as string).trim()
+                            const ref = (fd.get('ref') as string).trim() || activeBranch
+                            if (!wfId) return
+                            setSubmitting(true)
+                            try {
+                                await gh.triggerWorkflow(ctx, wfId, ref)
+                                toast(`Workflow dispatched on ${ref}`, 'success')
+                                onCreated()
+                                onClose()
+                            } catch (err) { toast(`Failed: ${err instanceof Error ? err.message : 'unknown'}`, 'error') }
+                            setSubmitting(false)
+                        }}>
+                            {workflows.length > 0
+                                ? <select name="workflow" className="picker-select" required>
+                                    <option value="">Select workflow…</option>
+                                    {workflows.map(w => (
+                                        <option key={w.id} value={w.path.replace('.github/workflows/', '')}>{w.name}</option>
+                                    ))}
+                                </select>
+                                : <input name="workflow" className="form-input" placeholder="Workflow file (e.g. app-build.yml)" required autoFocus />
+                            }
+                            <input name="ref" className="form-input" placeholder={`Branch (default: ${activeBranch})`} />
+                            <button className="button primary" type="submit" disabled={submitting}>{submitting ? 'Dispatching…' : 'Run Workflow'}</button>
+                        </form>
+                    )}
+
+                    {active === 'Environment' && (
+                        <form className="create-form" onSubmit={async (e: FormEvent<HTMLFormElement>) => {
+                            e.preventDefault()
+                            const fd = new FormData(e.currentTarget)
+                            const slug = (fd.get('slug') as string).trim().toLowerCase().replace(/[^a-z0-9-]/g, '-')
+                            const desc = (fd.get('description') as string).trim()
+                            if (!slug) return
+                            setSubmitting(true)
+                            try {
+                                await gh.createEnvironment(ctx, slug, desc || slug, activeBranch)
+                                toast(`Environment "${slug}" created`, 'success')
+                                onCreated()
+                                onClose()
+                            } catch (err) { toast(`Failed: ${err instanceof Error ? err.message : 'unknown'}`, 'error') }
+                            setSubmitting(false)
+                        }}>
+                            <input name="slug" className="form-input" placeholder="Environment name (e.g. staging)" required autoFocus />
+                            <input name="description" className="form-input" placeholder="Description (optional)" />
+                            <button className="button primary" type="submit" disabled={submitting}>{submitting ? 'Creating…' : 'Create Environment'}</button>
+                        </form>
+                    )}
+
+                    {active && !['Issue', 'Label', 'Variable', 'Workflow', 'Environment'].includes(active) && (
                         <p className="empty-state">Coming soon — use the GitHub API or CLI to create a {active.toLowerCase()} for now</p>
                     )}
                 </div>
@@ -534,6 +590,8 @@ export default function App() {
     const [inspectEntry, setInspectEntry] = useState<RegistryEntry | null>(null)
     const [lastScaffold, setLastScaffold] = useState<gh.ScaffoldResult | null>(null)
     const [vaultAddOpen, setVaultAddOpen] = useState(false)
+    const [runFormOpen, setRunFormOpen] = useState(false)
+    const [envFormOpen, setEnvFormOpen] = useState(false)
     const { toasts, push: toast } = useToasts()
     const live = useLiveData(ctx)
     const activeBranch = live.repo?.default_branch ?? 'main'
@@ -709,6 +767,41 @@ export default function App() {
 
                 {page === 'CI' && (
                     <section className="page-ci">
+                        <div className="page-header">
+                            <h2>CI</h2>
+                            <button className="button primary" type="button" onClick={() => setRunFormOpen(!runFormOpen)}>
+                                {runFormOpen ? '✕ Cancel' : '▶ Run Workflow'}
+                            </button>
+                        </div>
+                        {runFormOpen && (
+                            <form className="surface run-workflow-form" onSubmit={async (e: FormEvent) => {
+                                e.preventDefault()
+                                if (!ctx) return
+                                if (!gh.hasToken()) { toast('Set a GitHub token in Settings to perform actions', 'error'); return }
+                                const fd = new FormData(e.currentTarget as HTMLFormElement)
+                                const wfId = (fd.get('workflow') as string).trim()
+                                const ref = (fd.get('ref') as string).trim() || activeBranch
+                                if (!wfId) return
+                                try {
+                                    await gh.triggerWorkflow(ctx, wfId, ref)
+                                    toast(`Workflow dispatched on ${ref}`, 'success')
+                                    setRunFormOpen(false)
+                                    setTimeout(() => live.refresh(), 2000)
+                                } catch (e) { toast(`Failed: ${e instanceof Error ? e.message : 'unknown'}`, 'error') }
+                            }}>
+                                {live.workflows.length > 0
+                                    ? <select name="workflow" className="picker-select" required>
+                                        <option value="">Select workflow…</option>
+                                        {live.workflows.map(w => (
+                                            <option key={w.id} value={w.path.replace('.github/workflows/', '')}>{w.name}</option>
+                                        ))}
+                                    </select>
+                                    : <input name="workflow" className="form-input" placeholder="Workflow file (e.g. app-build.yml)" required autoFocus />
+                                }
+                                <input name="ref" className="form-input" placeholder={`Branch (default: ${activeBranch})`} />
+                                <button className="button primary" type="submit">Dispatch</button>
+                            </form>
+                        )}
                         {live.runs.length === 0
                             ? <EmptyState text="No workflow runs" loading={live.loading} />
                             : <div className="item-list">
@@ -942,7 +1035,34 @@ export default function App() {
 
                 {page === 'Environments' && (
                     <section className="page-environments">
-                        {envBranches.length === 0
+                        <div className="page-header">
+                            <h2>Environments</h2>
+                            <button className="button primary" type="button" onClick={() => setEnvFormOpen(!envFormOpen)}>
+                                {envFormOpen ? '✕ Cancel' : '+ New Environment'}
+                            </button>
+                        </div>
+                        {envFormOpen && (
+                            <form className="surface env-create-form" onSubmit={async (e: FormEvent) => {
+                                e.preventDefault()
+                                if (!ctx) return
+                                if (!gh.hasToken()) { toast('Set a GitHub token in Settings to perform actions', 'error'); return }
+                                const fd = new FormData(e.currentTarget as HTMLFormElement)
+                                const slug = (fd.get('slug') as string).trim().toLowerCase().replace(/[^a-z0-9-]/g, '-')
+                                const desc = (fd.get('description') as string).trim()
+                                if (!slug) return
+                                try {
+                                    const result = await gh.createEnvironment(ctx, slug, desc || slug, activeBranch)
+                                    toast(`Environment "${slug}" created on ${result.branch}`, 'success')
+                                    setEnvFormOpen(false)
+                                    live.refresh()
+                                } catch (e) { toast(`Failed: ${e instanceof Error ? e.message : 'unknown'}`, 'error') }
+                            }}>
+                                <input name="slug" className="form-input" placeholder="Environment name (e.g. staging, dev)" required autoFocus />
+                                <input name="description" className="form-input" placeholder="Description (optional)" />
+                                <button className="button primary" type="submit">Create Environment</button>
+                            </form>
+                        )}
+                        {envBranches.length === 0 && !envFormOpen
                             ? <EmptyState text="No environments" loading={live.loading} />
                             : <div className="item-list">
                                 {envBranches.map(b => (
@@ -1131,7 +1251,7 @@ export default function App() {
                 />
             )}
 
-            {createOpen && <CreateModal ctx={ctx} onClose={() => setCreateOpen(false)} toast={toast} onCreated={live.refresh} />}
+            {createOpen && <CreateModal ctx={ctx} onClose={() => setCreateOpen(false)} toast={toast} onCreated={live.refresh} workflows={live.workflows} activeBranch={activeBranch} />}
         </div>
     )
 }

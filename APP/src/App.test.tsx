@@ -59,6 +59,9 @@ function mockFetch() {
     if (url.includes('/actions/runs')) {
       return { ok: true, status: 200, json: async () => ({ workflow_runs: [] }) }
     }
+    if (url.includes('/actions/workflows')) {
+      return { ok: true, status: 200, json: async () => ({ workflows: [{ id: 1, name: 'App Build & Test', path: '.github/workflows/app-build.yml', state: 'active' }] }) }
+    }
     if (url.includes('/branches')) {
       return { ok: true, status: 200, json: async () => [{ name: 'main', protected: true, commit: { sha: 'abc1234', url: '' } }] }
     }
@@ -286,6 +289,25 @@ describe('Shell after repo selection', () => {
     await renderAndPick()
     fireEvent.click(screen.getByRole('button', { name: /^CI/ }))
     expect(screen.getByText('No workflow runs')).toBeInTheDocument()
+    expect(screen.getByText('▶ Run Workflow')).toBeInTheDocument()
+  })
+
+  it('CI run workflow form opens and closes', async () => {
+    await renderAndPick()
+    fireEvent.click(screen.getByRole('button', { name: /^CI/ }))
+    fireEvent.click(screen.getByText('▶ Run Workflow'))
+    expect(screen.getByText('Dispatch')).toBeInTheDocument()
+    fireEvent.click(screen.getByText('✕ Cancel'))
+    expect(screen.queryByText('Dispatch')).not.toBeInTheDocument()
+  })
+
+  it('CI run workflow form shows workflow dropdown when workflows exist', async () => {
+    await renderAndPick()
+    fireEvent.click(screen.getByRole('button', { name: /^CI/ }))
+    fireEvent.click(screen.getByText('▶ Run Workflow'))
+    await waitFor(() => {
+      expect(screen.getByText('Select workflow…')).toBeInTheDocument()
+    })
   })
 
   it('navigates to Files page', async () => {
@@ -323,6 +345,17 @@ describe('Shell after repo selection', () => {
     await renderAndPick()
     fireEvent.click(screen.getByRole('button', { name: /^Environments/ }))
     expect(screen.getByText(/No environments/)).toBeInTheDocument()
+    expect(screen.getByText('+ New Environment')).toBeInTheDocument()
+  })
+
+  it('Environments create form opens and closes', async () => {
+    await renderAndPick()
+    fireEvent.click(screen.getByRole('button', { name: /^Environments/ }))
+    fireEvent.click(screen.getByText('+ New Environment'))
+    expect(screen.getByPlaceholderText(/Environment name/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Create Environment' })).toBeInTheDocument()
+    fireEvent.click(screen.getByText('✕ Cancel'))
+    expect(screen.queryByPlaceholderText(/Environment name/)).not.toBeInTheDocument()
   })
 
   it('navigates to Registry page', async () => {
@@ -524,11 +557,28 @@ describe('Shell after repo selection', () => {
     expect(screen.getByText('Label')).toBeInTheDocument()
   })
 
-  it('create modal shows coming soon for unimplemented options', async () => {
+  it('create modal shows Workflow form on click', async () => {
     await renderAndPick()
     fireEvent.click(document.querySelector('.create-btn')!)
     await waitFor(() => screen.getByText('Create'))
     fireEvent.click(screen.getByText('Workflow'))
+    expect(screen.getByRole('button', { name: 'Run Workflow' })).toBeInTheDocument()
+  })
+
+  it('create modal shows Environment form on click', async () => {
+    await renderAndPick()
+    fireEvent.click(document.querySelector('.create-btn')!)
+    await waitFor(() => screen.getByText('Create'))
+    fireEvent.click(screen.getByText('Environment'))
+    expect(screen.getByRole('button', { name: 'Create Environment' })).toBeInTheDocument()
+    expect(screen.getByPlaceholderText(/Environment name/)).toBeInTheDocument()
+  })
+
+  it('create modal shows coming soon for unimplemented options', async () => {
+    await renderAndPick()
+    fireEvent.click(document.querySelector('.create-btn')!)
+    await waitFor(() => screen.getByText('Create'))
+    fireEvent.click(screen.getByText('Pull Request'))
     expect(screen.getByText(/Coming soon/)).toBeInTheDocument()
   })
 

@@ -156,6 +156,13 @@ export interface PR {
   draft: boolean
 }
 
+export interface Workflow {
+  id: number
+  name: string
+  path: string
+  state: string
+}
+
 export interface WorkflowRun {
   id: number
   name: string
@@ -350,6 +357,11 @@ export const deleteBranch = (ctx: RepoCtx, name: string) =>
   })
 
 /* ── Workflow operations ───────────────────────────────────── */
+
+export const fetchWorkflows = (ctx: RepoCtx) =>
+  api<{ workflows: Workflow[] }>(repoUrl(ctx, '/actions/workflows?per_page=30'))
+    .then(r => r.workflows)
+    .catch(() => [] as Workflow[])
 
 export const triggerWorkflow = (ctx: RepoCtx, workflowId: string, ref = 'main') =>
   api<void>(repoUrl(ctx, `/actions/workflows/${workflowId}/dispatches`), {
