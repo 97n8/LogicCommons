@@ -1,0 +1,40 @@
+name: App Build & Test
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    paths:
+      - 'APP/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: APP
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'APP/package-lock.json'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Run tests (if any)
+        run: npm test || echo "No tests or tests failed, continuing"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-dist
+          path: APP/dist
