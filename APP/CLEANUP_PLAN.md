@@ -71,3 +71,9 @@ Only continue deletion when all active gates pass.
 - Branch: cleanup/remove-legacy-root-config
 - Commit: chore(cleanup): remove or archive legacy-root config/public items after migration
 - Notes: Any tracked files were archived under migration-backups/legacy-root-config via git mv (history preserved). Validate APP build before merging.
+
+## Finalization
+- Date: 2026-02-21
+- Action: Final integration branch created and all migration branches merged. Workflows (`app-build.yml`) and `vercel.json` updated to use `APP` as canonical build root. `README.md` rewritten.
+- Branch: cleanup/finalize
+- Notes: After merging this PR into `main`, delete all `cleanup/*` branches and optionally tag `v1.0.0`.
