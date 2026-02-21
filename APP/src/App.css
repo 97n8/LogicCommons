@@ -273,6 +273,11 @@
 	font-weight: 700;
 }
 
+.topbar-time {
+	font-size: 0.8rem;
+	color: var(--color-muted);
+}
+
 .topbar-sync {
 	white-space: nowrap;
 	font-size: 0.8rem;
@@ -783,7 +788,7 @@
 	to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ── page content fade ─────────────────────────────────────── */
+/* ── page content fade ─────────────────���───────────────────── */
 
 @keyframes page-enter {
 	from { opacity: 0; transform: translateY(4px); }
