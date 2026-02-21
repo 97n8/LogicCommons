@@ -7,18 +7,9 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview",
-    "dev:app": "vite",
-    "dev:components": "npm --prefix \"PublicLogic OS Component Library (4)\" run dev",
-    "dev:components:auth": "npm --prefix \"PublicLogic OS Component Library (4)\" run dev:auth",
-    "dev:all": "concurrently -n app,components -c blue,green \"npm run dev:app\" \"npm run dev:components\"",
-    "dev:all:auth": "concurrently -n app,components -c blue,green \"npm run dev:app\" \"npm run dev:components:auth\"",
-    "build:app": "tsc -b && vite build",
-    "build:components": "npm --prefix \"PublicLogic OS Component Library (4)\" run build",
-    "lint:app": "eslint .",
-    "verify": "npm run lint:app && npm run build:app && npm run build:components",
-    "install:components": "npm --prefix \"PublicLogic OS Component Library (4)\" install",
-    "install:all": "npm install && npm run install:components"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "preview": "vite preview"
   },
   "dependencies": {
     "react": "^19.2.0",
@@ -26,6 +17,8 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.0",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
@@ -34,10 +27,10 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
+    "jsdom": "^26.1.0",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",
     "vite": "^7.2.4",
-    "concurrently": "^9.2.1",
-    "vercel": "^50.22.0"
+    "vitest": "^3.2.4"
   }
 }
