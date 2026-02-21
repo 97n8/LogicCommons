@@ -1,8 +1,8 @@
 {
   "framework": "vite",
-  "installCommand": "npm ci && npm --prefix \"PublicLogic OS Component Library (4)\" ci",
-  "buildCommand": "node scripts/vercel-build.mjs",
-  "outputDirectory": "dist",
+  "installCommand": "npm --prefix APP ci",
+  "buildCommand": "npm --prefix APP run build",
+  "outputDirectory": "APP/dist",
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ],
