@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo, type FormEvent } from 'react'
 import './App.css'
 import * as gh from './github'
-import type { RepoCtx, RepoTier, DeploymentStatus } from './github'
+import type { RepoCtx, RepoTier, DeploymentStatus, RegistryEntry } from './github'
 
 /* ── helpers ───────────────────────────────────────────────── */
 
@@ -385,7 +385,7 @@ function CreateModal({ onClose }: { onClose: () => void }) {
 
 /* ── command palette ───────────────────────────────────────── */
 
-const NAV_PAGES = ['Dashboard', 'Today', 'Issues', 'PRs', 'Lists', 'CI', 'Pipeline', 'Branches', 'Labels', 'Files', 'Projects', 'Playbooks', 'Tools', 'Cases', 'Vault', 'Environments', 'Settings'] as const
+const NAV_PAGES = ['Dashboard', 'Today', 'Issues', 'PRs', 'Lists', 'CI', 'Pipeline', 'Branches', 'Labels', 'Files', 'Projects', 'Playbooks', 'Tools', 'Cases', 'Vault', 'Environments', 'Registry', 'Settings'] as const
 type NavPage = (typeof NAV_PAGES)[number]
 
 function CommandPalette({ onClose, onNav, onSwitchRepo, onCreateOpen }: {
@@ -437,6 +437,10 @@ export default function App() {
     const [openFile, setOpenFile] = useState<{ path: string; content: string; sha: string } | null>(null)
     const [editContent, setEditContent] = useState('')
     const [commitMsg, setCommitMsg] = useState('')
+    const [registry, setRegistry] = useState<RegistryEntry[]>([])
+    const [scaffoldOpen, setScaffoldOpen] = useState(false)
+    const [scaffoldTemplate, setScaffoldTemplate] = useState('typescript-docker')
+    const [scaffolding, setScaffolding] = useState(false)
     const { toasts, push: toast } = useToasts()
     const live = useLiveData(ctx)
     const activeBranch = live.repo?.default_branch ?? 'main'
@@ -455,6 +459,15 @@ export default function App() {
             .catch(() => { if (!cancelled) setDirEntries([]) })
         return () => { cancelled = true }
     }, [page, ctx, filePath, activeBranch])
+
+    useEffect(() => {
+        if (page !== 'Registry' || !ctx) return
+        let cancelled = false
+        gh.fetchRegistry(ctx)
+            .then(entries => { if (!cancelled) setRegistry(entries) })
+            .catch(() => { if (!cancelled) setRegistry([]) })
+        return () => { cancelled = true }
+    }, [page, ctx])
 
     if (!ctx) {
         return (
@@ -812,6 +825,86 @@ export default function App() {
                                 ))}
                             </div>
                         }
+                    </section>
+                )}
+
+                {page === 'Registry' && (
+                    <section className="page-registry">
+                        <div className="page-header">
+                            <h2>Registry</h2>
+                            <button className="button primary" type="button" onClick={() => setScaffoldOpen(!scaffoldOpen)}>
+                                {scaffoldOpen ? '✕ Cancel' : '+ Scaffold Repo'}
+                            </button>
+                        </div>
+                        {scaffoldOpen && (
+                            <form className="surface registry-scaffold-form" onSubmit={async (e: FormEvent) => {
+                                e.preventDefault()
+                                if (!ctx) return
+                                if (!gh.hasToken()) { toast('Set a GitHub token in Settings to perform actions', 'error'); return }
+                                const fd = new FormData(e.currentTarget as HTMLFormElement)
+                                const rName = (fd.get('name') as string).trim()
+                                const rDesc = (fd.get('description') as string).trim()
+                                const rPrivate = fd.get('private') === 'on'
+                                if (!rName) return
+                                setScaffolding(true)
+                                try {
+                                    const result = await gh.scaffoldRepository(ctx.owner, rName, rDesc || rName, scaffoldTemplate, rPrivate)
+                                    await gh.saveRegistryEntry(ctx, result.registryEntry)
+                                    setRegistry(prev => [...prev, result.registryEntry])
+                                    setScaffoldOpen(false)
+                                    toast(`Scaffolded ${result.repo.full_name} with ${result.template.name}@${result.template.version}`, 'success')
+                                } catch (e) { toast(`Failed: ${e instanceof Error ? e.message : 'unknown'}`, 'error') }
+                                setScaffolding(false)
+                            }}>
+                                <input name="name" className="form-input" placeholder="Repository name" required autoFocus />
+                                <input name="description" className="form-input" placeholder="Description" />
+                                <div className="scaffold-row">
+                                    <label className="picker-filter-label">Template</label>
+                                    <select className="picker-select" value={scaffoldTemplate} onChange={e => setScaffoldTemplate(e.target.value)}>
+                                        {gh.BUILTIN_TEMPLATES.map(t => (
+                                            <option key={t.name} value={t.name}>{t.name}@{t.version} — {t.description}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <label className="form-checkbox"><input name="private" type="checkbox" defaultChecked /> Make private</label>
+                                <button className="button primary" type="submit" disabled={scaffolding}>{scaffolding ? 'Scaffolding…' : 'Scaffold Repository'}</button>
+                            </form>
+                        )}
+                        <div className="registry-templates">
+                            <h3>Available Templates</h3>
+                            <div className="item-list">
+                                {gh.BUILTIN_TEMPLATES.map(t => (
+                                    <div key={t.name} className="item-row registry-tpl-row">
+                                        <span className="registry-tpl-name">{t.name}@{t.version}</span>
+                                        <span className={`tag deploy-${t.deployTarget}`}>{t.deployTarget}</span>
+                                        <span className="registry-tpl-desc">{t.description}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="registry-entries">
+                            <h3>Registered Repositories</h3>
+                            {registry.length === 0
+                                ? <EmptyState text="No repositories registered — scaffold a repo to add it to the registry" loading={live.loading} />
+                                : <div className="item-list">
+                                    {registry.map(entry => (
+                                        <div key={`${entry.owner}/${entry.repoName}`} className="item-row registry-entry-row">
+                                            <div className="item-main">
+                                                <div className="item-title-row">
+                                                    <span className="registry-repo-name">{entry.owner}/{entry.repoName}</span>
+                                                    <span className={`tag registry-status-${entry.status}`}>{entry.status}</span>
+                                                </div>
+                                                <div>
+                                                    <span className="tag">{entry.templateName}@{entry.templateVersion}</span>
+                                                    <span className={`tag deploy-${entry.deployTarget}`}>{entry.deployTarget}</span>
+                                                    {entry.requiredSecrets.length > 0 && <span className="registry-secrets">Secrets: {entry.requiredSecrets.join(', ')}</span>}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            }
+                        </div>
                     </section>
                 )}
 

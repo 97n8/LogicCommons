@@ -1156,3 +1156,67 @@
 		align-items: stretch;
 	}
 }
+
+/* ── Registry page ──────────────────────────────────────────── */
+
+.page-registry {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-4);
+}
+
+.registry-scaffold-form {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-3);
+	padding: var(--space-4);
+	margin-bottom: var(--space-2);
+}
+
+.scaffold-row {
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+}
+
+.registry-templates,
+.registry-entries {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-3);
+}
+
+.registry-templates h3,
+.registry-entries h3 {
+	font-size: 1rem;
+	font-weight: 600;
+	margin: 0;
+}
+
+.registry-tpl-row {
+	gap: var(--space-3);
+}
+
+.registry-tpl-name {
+	font-weight: 600;
+	font-family: 'SF Mono', 'Fira Code', 'Fira Mono', 'Roboto Mono', monospace;
+	font-size: 0.85rem;
+}
+
+.registry-tpl-desc {
+	color: var(--color-muted);
+	font-size: 0.85rem;
+}
+
+.registry-repo-name {
+	font-weight: 600;
+}
+
+.registry-secrets {
+	font-size: 0.8rem;
+	color: var(--color-muted);
+}
+
+.registry-status-active { background: #166534; color: #fff; }
+.registry-status-provisioning { background: #854d0e; color: #fff; }
+.registry-status-archived { background: var(--color-muted); color: #fff; }

@@ -1,7 +1,7 @@
 import { render, screen, cleanup, fireEvent, waitFor, act } from '@testing-library/react'
 import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest'
 import App from './App'
-import { inferRepoStatus } from './github'
+import { inferRepoStatus, getTemplate, BUILTIN_TEMPLATES } from './github'
 
 afterEach(() => {
   cleanup()
@@ -240,7 +240,7 @@ describe('Shell after repo selection', () => {
 
   it('renders all nav items', async () => {
     await renderAndPick()
-    const navLabels = ['Dashboard', 'Today', 'Issues', 'PRs', 'Lists', 'CI', 'Pipeline', 'Branches', 'Labels', 'Files', 'Projects', 'Playbooks', 'Tools', 'Cases', 'Vault', 'Environments', 'Settings']
+    const navLabels = ['Dashboard', 'Today', 'Issues', 'PRs', 'Lists', 'CI', 'Pipeline', 'Branches', 'Labels', 'Files', 'Projects', 'Playbooks', 'Tools', 'Cases', 'Vault', 'Environments', 'Registry', 'Settings']
     for (const label of navLabels) {
       expect(screen.getByRole('button', { name: new RegExp(label) })).toBeInTheDocument()
     }
@@ -310,6 +310,42 @@ describe('Shell after repo selection', () => {
     await renderAndPick()
     fireEvent.click(screen.getByRole('button', { name: /^Environments/ }))
     expect(screen.getByText(/No environments/)).toBeInTheDocument()
+  })
+
+  it('navigates to Registry page', async () => {
+    await renderAndPick()
+    fireEvent.click(screen.getByRole('button', { name: /^Registry/ }))
+    expect(screen.getByText('Available Templates')).toBeInTheDocument()
+    expect(screen.getByText('Registered Repositories')).toBeInTheDocument()
+  })
+
+  it('Registry page shows built-in templates', async () => {
+    await renderAndPick()
+    fireEvent.click(screen.getByRole('button', { name: /^Registry/ }))
+    expect(screen.getByText(/typescript-docker@1\.0\.0/)).toBeInTheDocument()
+    expect(screen.getByText(/typescript-vercel@1\.0\.0/)).toBeInTheDocument()
+  })
+
+  it('Registry page shows scaffold button', async () => {
+    await renderAndPick()
+    fireEvent.click(screen.getByRole('button', { name: /^Registry/ }))
+    expect(screen.getByText('+ Scaffold Repo')).toBeInTheDocument()
+  })
+
+  it('Registry scaffold form opens and closes', async () => {
+    await renderAndPick()
+    fireEvent.click(screen.getByRole('button', { name: /^Registry/ }))
+    fireEvent.click(screen.getByText('+ Scaffold Repo'))
+    expect(screen.getByPlaceholderText('Repository name')).toBeInTheDocument()
+    expect(screen.getByText('Scaffold Repository')).toBeInTheDocument()
+    fireEvent.click(screen.getByText('✕ Cancel'))
+    expect(screen.queryByPlaceholderText('Repository name')).not.toBeInTheDocument()
+  })
+
+  it('Registry shows empty state when no entries', async () => {
+    await renderAndPick()
+    fireEvent.click(screen.getByRole('button', { name: /^Registry/ }))
+    expect(screen.getByText(/No repositories registered/)).toBeInTheDocument()
   })
 
   it('navigates to Today page', async () => {
@@ -528,5 +564,77 @@ describe('inferRepoStatus', () => {
   it('includes openIssueCount from repo', () => {
     const status = inferRepoStatus({ ...baseRepo, open_issues_count: 5 })
     expect(status.openIssueCount).toBe(5)
+  })
+})
+
+/* ── Control Plane templates ─────────────────────────────────── */
+
+describe('Control Plane templates', () => {
+  it('BUILTIN_TEMPLATES has expected entries', () => {
+    expect(BUILTIN_TEMPLATES.length).toBeGreaterThanOrEqual(2)
+    expect(BUILTIN_TEMPLATES.find(t => t.name === 'typescript-docker')).toBeDefined()
+    expect(BUILTIN_TEMPLATES.find(t => t.name === 'typescript-vercel')).toBeDefined()
+  })
+
+  it('getTemplate returns typescript-docker by default', () => {
+    const tpl = getTemplate('typescript-docker', 'my-app', 'A test app')
+    expect(tpl.name).toBe('typescript-docker')
+    expect(tpl.version).toBe('1.0.0')
+    expect(tpl.language).toBe('TypeScript')
+    expect(tpl.deployTarget).toBe('docker')
+    expect(tpl.secrets).toContain('NODE_ENV')
+    expect(tpl.files.length).toBeGreaterThan(0)
+  })
+
+  it('typescript-docker template includes Dockerfile', () => {
+    const tpl = getTemplate('typescript-docker', 'my-app', 'A test app')
+    const dockerfile = tpl.files.find(f => f.path === 'Dockerfile')
+    expect(dockerfile).toBeDefined()
+    expect(dockerfile!.content).toContain('FROM node:20-alpine')
+  })
+
+  it('typescript-docker template includes .env.example', () => {
+    const tpl = getTemplate('typescript-docker', 'my-app', 'A test app')
+    const envFile = tpl.files.find(f => f.path === '.env.example')
+    expect(envFile).toBeDefined()
+    expect(envFile!.content).toContain('NODE_ENV')
+  })
+
+  it('typescript-docker template includes README with architecture', () => {
+    const tpl = getTemplate('typescript-docker', 'my-app', 'A test app')
+    const readme = tpl.files.find(f => f.path === 'README.md')
+    expect(readme).toBeDefined()
+    expect(readme!.content).toContain('Architecture')
+    expect(readme!.content).toContain('my-app')
+  })
+
+  it('getTemplate returns typescript-vercel template', () => {
+    const tpl = getTemplate('typescript-vercel', 'my-app', 'A vercel app')
+    expect(tpl.name).toBe('typescript-vercel')
+    expect(tpl.deployTarget).toBe('vercel')
+    expect(tpl.secrets).toContain('VERCEL_TOKEN')
+  })
+
+  it('typescript-vercel template has no Dockerfile', () => {
+    const tpl = getTemplate('typescript-vercel', 'my-app', 'A vercel app')
+    expect(tpl.files.find(f => f.path === 'Dockerfile')).toBeUndefined()
+  })
+
+  it('typescript-vercel template includes vercel.json', () => {
+    const tpl = getTemplate('typescript-vercel', 'my-app', 'A vercel app')
+    const vercelJson = tpl.files.find(f => f.path === 'vercel.json')
+    expect(vercelJson).toBeDefined()
+  })
+
+  it('getTemplate defaults to docker for unknown template', () => {
+    const tpl = getTemplate('nonexistent', 'my-app', 'fallback')
+    expect(tpl.name).toBe('typescript-docker')
+  })
+
+  it('template injects repo name into files', () => {
+    const tpl = getTemplate('typescript-docker', 'custom-name', 'Custom desc')
+    const pkg = tpl.files.find(f => f.path === 'package.json')
+    expect(pkg).toBeDefined()
+    expect(pkg!.content).toContain('custom-name')
   })
 })
