@@ -100,6 +100,7 @@ export default function App() {
                     <span className="topbar-time">{formatDate()} {formatTime()}</span>
                 </header>
 
+                <div className="page-content">
                 {live.error && <div className="error-banner">Connection issue: {live.error}</div>}
 
                 {page === 'Dashboard' && <DashboardPage repo={live.repo} openIssueCount={openIssues.length} openPRCount={openPRs.length} />}
@@ -120,6 +121,7 @@ export default function App() {
                 {page === 'Vault' && <VaultPage variables={live.variables} loading={live.loading} ctx={ctx} toast={toast} refresh={live.refresh} />}
                 {page === 'Environments' && <EnvironmentsPage envBranches={envBranches} loading={live.loading} ctx={ctx} activeBranch={activeBranch} toast={toast} />}
                 {page === 'Settings' && <SettingsPage user={user} onSwitchRepo={() => setCtx(null)} />}
+                </div>
             </div>
 
             <div className="toast-stack">
