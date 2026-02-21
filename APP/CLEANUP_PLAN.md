@@ -64,3 +64,10 @@ Only continue deletion when all active gates pass.
 - Branch: cleanup/remove-legacy-root-src
 - Commit: chore(cleanup): remove empty APP/legacy-root-src after migration
 - Notes: Backups (.scaffold.bak) were removed earlier in cleanup/remove-scaffold-backups.
+
+## Removal: legacy-root-config
+- Date: 2026-02-21 09:56:17Z UTC
+- Action: Removed or archived legacy root config/public artifacts (legacy-root-public, index.html, Vite/TS/ESLint configs).
+- Branch: cleanup/remove-legacy-root-config
+- Commit: chore(cleanup): remove or archive legacy-root config/public items after migration
+- Notes: Any tracked files were archived under migration-backups/legacy-root-config via git mv (history preserved). Validate APP build before merging.
