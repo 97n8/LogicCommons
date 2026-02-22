@@ -1389,6 +1389,89 @@
 
 .badge-private { background: rgba(245, 158, 11, 0.1); color: var(--color-warning); }
 
+/* ── Repo picker screen ────────────────────────────────────── */
+
+.picker-screen {
+	min-height: 100vh;
+	background: var(--color-bg);
+	display: flex;
+	align-items: flex-start;
+	justify-content: center;
+	padding: var(--space-8) var(--space-4);
+}
+
+.picker-inner {
+	width: 100%;
+	max-width: 960px;
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-4);
+}
+
+.picker-brand {
+	display: flex;
+	align-items: baseline;
+	gap: var(--space-3);
+	padding-bottom: var(--space-1);
+	border-bottom: 1px solid var(--color-border);
+}
+
+.picker-logo {
+	font-size: 0.65rem;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	background: var(--color-primary);
+	color: #fff;
+	padding: 3px 7px;
+	border-radius: var(--radius-sm);
+	flex-shrink: 0;
+}
+
+.picker-brand h1 {
+	font-size: 1.25rem;
+	font-weight: 700;
+	margin: 0;
+	color: var(--color-text);
+	line-height: 1;
+}
+
+.picker-sub {
+	font-size: 0.8rem;
+	color: var(--color-muted);
+	margin: 0 0 0 auto;
+}
+
+.picker-actions {
+	display: flex;
+	gap: var(--space-2);
+	align-items: center;
+}
+
+.picker-search {
+	flex: 1;
+	padding: var(--space-2) var(--space-3);
+	font-size: 0.875rem;
+	font-family: inherit;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-sm);
+	background: var(--color-surface);
+	color: var(--color-text);
+	outline: none;
+	transition: border-color var(--transition-fast);
+}
+
+.picker-search:focus {
+	border-color: var(--color-primary);
+}
+
+.picker-loading {
+	text-align: center;
+	color: var(--color-muted);
+	padding: var(--space-8);
+	font-size: 0.875rem;
+}
+
 /* ── Repo cards ────────────────────────────────────────────── */
 
 .picker-grid {
