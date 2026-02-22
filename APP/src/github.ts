@@ -150,10 +150,32 @@ export interface PR {
   created_at: string
   updated_at: string
   merged_at: string | null
+  mergeable: boolean | null
+  mergeable_state: string
   user: { login: string; avatar_url: string }
-  head: { ref: string }
+  head: { ref: string; sha: string }
   base: { ref: string }
   draft: boolean
+  comments: number
+  commits: number
+  additions: number
+  deletions: number
+  changed_files: number
+}
+
+export interface PRCheck {
+  name: string
+  status: string
+  conclusion: string | null
+  html_url: string | null
+}
+
+export interface PRReview {
+  id: number
+  user: { login: string; avatar_url: string }
+  state: 'APPROVED' | 'CHANGES_REQUESTED' | 'COMMENTED' | 'PENDING'
+  submitted_at: string
+  body: string
 }
 
 export interface Workflow {
@@ -331,11 +353,35 @@ export const createLabel = (ctx: RepoCtx, name: string, color: string, descripti
     body: JSON.stringify({ name, color, description }),
   })
 
-export const mergePR = (ctx: RepoCtx, number: number, method: 'merge' | 'squash' | 'rebase' = 'merge') =>
+export const mergePR = (ctx: RepoCtx, number: number, method: 'merge' | 'squash' | 'rebase' = 'squash') =>
   api<void>(repoUrl(ctx, `/pulls/${number}/merge`), {
     method: 'PUT',
     body: JSON.stringify({ merge_method: method }),
   })
+
+export const approvePR = (ctx: RepoCtx, number: number) =>
+  api<void>(repoUrl(ctx, `/pulls/${number}/reviews`), {
+    method: 'POST',
+    body: JSON.stringify({ event: 'APPROVE' }),
+  })
+
+export const fetchPR = (ctx: RepoCtx, number: number) =>
+  api<PR>(repoUrl(ctx, `/pulls/${number}`))
+
+export const fetchPRChecks = (ctx: RepoCtx, ref: string) =>
+  api<{ check_runs: PRCheck[] }>(repoUrl(ctx, `/commits/${ref}/check-runs?per_page=30`))
+    .then(r => r.check_runs)
+    .catch(() => [] as PRCheck[])
+
+export const fetchPRReviews = (ctx: RepoCtx, number: number) =>
+  api<PRReview[]>(repoUrl(ctx, `/pulls/${number}/reviews`))
+    .catch(() => [] as PRReview[])
+
+export const reopenIssue = (ctx: RepoCtx, number: number) =>
+  updateIssue(ctx, number, { state: 'open' })
+
+export const rerunWorkflow = (ctx: RepoCtx, runId: number) =>
+  api<void>(repoUrl(ctx, `/actions/runs/${runId}/rerun`), { method: 'POST' })
 
 export const createPR = (ctx: RepoCtx, title: string, head: string, base: string, body?: string, draft = false) =>
   api<PR>(repoUrl(ctx, '/pulls'), {

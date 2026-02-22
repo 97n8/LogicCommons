@@ -59,9 +59,9 @@ function TokenSetup({ onSaved }: { onSaved: () => void }) {
 
 type SortKey = 'activity' | 'issues' | 'stars' | 'name'
 
-export default function RepoPicker({ onSelect, user }: { onSelect: (ctx: RepoCtx) => void; user: gh.GHUser | null }) {
-    const [repos, setRepos] = useState<gh.Repo[]>([])
-    const [loading, setLoading] = useState(gh.hasToken())
+export default function RepoPicker({ onSelect, user, repos: prefetchedRepos }: { onSelect: (ctx: RepoCtx) => void; user: gh.GHUser | null; repos?: gh.Repo[] }) {
+    const [repos, setRepos] = useState<gh.Repo[]>(prefetchedRepos ?? [])
+    const [loading, setLoading] = useState(prefetchedRepos ? false : gh.hasToken())
     const [error, setError] = useState<string | null>(null)
     const [query, setQuery] = useState('')
     const [newRepo, setNewRepo] = useState(false)
@@ -72,7 +72,7 @@ export default function RepoPicker({ onSelect, user }: { onSelect: (ctx: RepoCtx
     const inputRef = useRef<HTMLInputElement>(null)
 
     useEffect(() => {
-        if (!gh.hasToken()) return
+        if (!gh.hasToken() || prefetchedRepos) return
         let cancelled = false
         gh.fetchUserRepos()
             .then(r => { if (!cancelled) { setRepos(r); setLoading(false) } })

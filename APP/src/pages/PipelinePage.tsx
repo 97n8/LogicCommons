@@ -1,8 +1,29 @@
+import { useState } from 'react'
 import { EmptyState } from '../components/shared'
 import type { WorkflowRun, RepoCtx } from '../github'
+import * as gh from '../github'
 import { relativeTime, ghUrl } from '../helpers'
 
-export default function PipelinePage({ runs, loading, ctx }: { runs: WorkflowRun[]; loading: boolean; ctx: RepoCtx }) {
+export default function PipelinePage({ runs, loading, ctx, toast, refresh }: {
+    runs: WorkflowRun[]; loading: boolean; ctx: RepoCtx
+    toast: (msg: string, type?: 'success' | 'error' | 'info') => void
+    refresh: () => void
+}) {
+    const [busy, setBusy] = useState<number | null>(null)
+
+    async function rerun(r: WorkflowRun) {
+        setBusy(r.id)
+        try {
+            await gh.rerunWorkflow(ctx, r.id)
+            toast(`Re-running ${r.name}`, 'info')
+            setTimeout(refresh, 2000)
+        } catch {
+            toast('Re-run failed', 'error')
+        } finally {
+            setBusy(null)
+        }
+    }
+
     return (
         <section className="page-pipeline">
             <div className="page-header">
@@ -18,17 +39,24 @@ export default function PipelinePage({ runs, loading, ctx }: { runs: WorkflowRun
                         <h3>Recent</h3>
                         <div className="item-list">
                             {runs.slice(0, 10).map(r => (
-                                <a key={r.id} className="item-row" href={r.html_url} target="_blank" rel="noopener noreferrer">
+                                <div key={r.id} className="item-row">
                                     <span className={`ci-badge ci-${r.conclusion ?? r.status}`}>{r.conclusion ?? r.status}</span>
                                     <div className="item-main">
-                                        <span>{r.name}</span>
+                                        <a href={r.html_url} target="_blank" rel="noopener noreferrer">{r.name}</a>
                                         <div>
                                             <span className="branch-name">{r.head_branch}</span>
                                             <span>{r.event}</span>
-                                            <span>{relativeTime(r.created_at)}</span>
+                                            <span className="item-time">{relativeTime(r.created_at)}</span>
                                         </div>
                                     </div>
-                                </a>
+                                    {r.conclusion === 'failure' && (
+                                        <div className="item-actions">
+                                            <button className="button action-btn action-rerun" type="button" disabled={busy === r.id} onClick={() => rerun(r)}>
+                                                {busy === r.id ? '…' : '↺ Re-run'}
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
                             ))}
                         </div>
                     </div>
