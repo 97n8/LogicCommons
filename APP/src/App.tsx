@@ -9,6 +9,7 @@ import { StatusDot, Badge } from './components/shared'
 import RepoPicker from './components/RepoPicker'
 import CreateModal from './components/CreateModal'
 import CommandPalette from './components/CommandPalette'
+import SignInPage from './components/SignInPage'
 import DashboardPage from './pages/DashboardPage'
 import TodayPage from './pages/TodayPage'
 import IssuesPage from './pages/IssuesPage'
@@ -35,6 +36,7 @@ export default function App() {
     const [cmdOpen, setCmdOpen] = useState(false)
     const [createOpen, setCreateOpen] = useState(false)
     const [createView, setCreateView] = useState<'menu' | 'Issue' | 'Branch' | 'Label' | 'PR'>('menu')
+    const [authProvider, setAuthProvider] = useState<'github' | null>(gh.hasToken() ? 'github' : null)
 
     function openCreate(view: 'menu' | 'Issue' | 'Branch' | 'Label' | 'PR' = 'menu') {
         setCreateView(view)
@@ -61,6 +63,10 @@ export default function App() {
             .catch(() => { if (!cancelled) setDirEntries([]) })
         return () => { cancelled = true }
     }, [page, ctx, filePath, activeBranch])
+
+    if (!authProvider) {
+        return <SignInPage onGitHub={() => setAuthProvider('github')} />
+    }
 
     if (!ctx) {
         return <div><RepoPicker onSelect={c => { setCtx(c); setPage('Dashboard') }} user={user} /></div>

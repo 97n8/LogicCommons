@@ -80,11 +80,61 @@ function setToken(token = 'ghp_testtoken') {
   localStorage.setItem('lc_gh_token', token)
 }
 
+/* ── sign-in page ───────────────────────────────────────────── */
+
+describe('Sign-in page', () => {
+  it('shows sign-in page when no token is set', () => {
+    render(<App />)
+    expect(screen.getByText('LogicCommons')).toBeInTheDocument()
+    expect(screen.getByText('Sign in to continue')).toBeInTheDocument()
+    expect(screen.getByLabelText('Sign in with')).toBeInTheDocument()
+    expect(screen.getByText('Sign In')).toBeInTheDocument()
+  })
+
+  it('has GitHub, Google, and Microsoft 365 options', () => {
+    render(<App />)
+    const select = screen.getByLabelText('Sign in with')
+    expect(select).toBeInTheDocument()
+    expect(screen.getByText('GitHub')).toBeInTheDocument()
+    expect(screen.getByText('Google')).toBeInTheDocument()
+    expect(screen.getByText('Microsoft 365')).toBeInTheDocument()
+  })
+
+  it('defaults to GitHub provider', () => {
+    render(<App />)
+    const select = screen.getByLabelText('Sign in with') as HTMLSelectElement
+    expect(select.value).toBe('github')
+  })
+
+  it('shows coming soon for Google', () => {
+    render(<App />)
+    const select = screen.getByLabelText('Sign in with')
+    fireEvent.change(select, { target: { value: 'google' } })
+    fireEvent.click(screen.getByText('Sign In'))
+    expect(screen.getByText(/Coming soon/)).toBeInTheDocument()
+  })
+
+  it('shows coming soon for Microsoft 365', () => {
+    render(<App />)
+    const select = screen.getByLabelText('Sign in with')
+    fireEvent.change(select, { target: { value: 'microsoft365' } })
+    fireEvent.click(screen.getByText('Sign In'))
+    expect(screen.getByText(/Coming soon/)).toBeInTheDocument()
+  })
+
+  it('proceeds to token setup when GitHub is selected', () => {
+    render(<App />)
+    fireEvent.click(screen.getByText('Sign In'))
+    expect(screen.getByText(/Connect a GitHub token/)).toBeInTheDocument()
+  })
+})
+
 /* ── no-token state ─────────────────────────────────────────── */
 
 describe('No token', () => {
-  it('shows connect screen when no token is set', () => {
+  it('shows connect screen after signing in with GitHub', () => {
     render(<App />)
+    fireEvent.click(screen.getByText('Sign In'))
     expect(screen.getByText('LogicCommons')).toBeInTheDocument()
     expect(screen.getByText(/Connect a GitHub token/)).toBeInTheDocument()
     expect(screen.getByPlaceholderText('ghp_xxxxxxxxxxxxxxxxxxxx')).toBeInTheDocument()
@@ -93,6 +143,7 @@ describe('No token', () => {
 
   it('Connect button is disabled when input is empty', () => {
     render(<App />)
+    fireEvent.click(screen.getByText('Sign In'))
     const btn = screen.getByText('Connect')
     expect(btn).toBeDisabled()
   })
