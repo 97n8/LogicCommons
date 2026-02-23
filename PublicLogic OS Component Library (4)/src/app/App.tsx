@@ -4,6 +4,7 @@ import RequireAllowedUser from "../auth/RequireAllowedUser";
 import RequireAuth from "../auth/RequireAuth";
 import { getAllowedEmails } from "../auth/publiclogicConfig";
 import AppShell from "./shell/AppShell";
+import Builder from "./pages/Builder";
 import Dashboard from "./pages/Dashboard";
 import Environments from "./pages/Environments";
 import Pipeline from "./pages/Pipeline";
@@ -94,6 +95,7 @@ export default function App() {
         <Route path="/writing" element={<Navigate to="/playbooks" replace />} />
         <Route path="/discovery" element={<Navigate to="/dashboard" replace />} />
         <Route path="/tools" element={<Tools />} />
+        <Route path="/builder" element={<Builder />} />
         <Route path="/environments" element={<Environments />} />
         <Route path="/settings" element={<Settings />} />
 

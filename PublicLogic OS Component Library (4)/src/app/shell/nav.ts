@@ -1,4 +1,5 @@
 import {
+  Blocks,
   Building2,
   Gauge,
   Inbox,
@@ -17,6 +18,8 @@ export const NAV_ITEMS: NavItem[] = [
   { to: "/dashboard", label: "Dashboard", icon: Gauge },
   { to: "/lists", label: "Inbox", icon: Inbox },
   { to: "/tools", label: "Tools", icon: Wrench },
+  { to: "/builder", label: "Builder", icon: Blocks },
   { to: "/environments", label: "Environments", icon: Building2 },
   { to: "/settings", label: "Settings", icon: Settings },
 ];
+
